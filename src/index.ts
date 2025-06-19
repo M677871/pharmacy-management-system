@@ -1,11 +1,11 @@
 import express from 'express';
-import test from 'node:test';
 require('dotenv').config();
 
 const port = process.env.PORT ;
 const app = express();
 
 app.use(express.json());
+
 
 
 
@@ -27,11 +27,11 @@ import sequelize from '../config/db';
 const testConnection = async () => {
   try {
     console.log('Testing database connection...');
-    await sequelize.authenticate(); // actual connection test
-    console.log('✅ Database connection successful!');
+    await sequelize.authenticate();
+    console.log(' Database connection successful!');
   } catch (error) {
-    console.error('❌ Database connection failed:', error);
-    process.exit(1); // exit the process if connection fails
+    console.error(' Database connection failed:', error);
+    process.exit(1); 
   }
 };
 
