@@ -64,20 +64,23 @@ app.post("/auth/register", async (req, res) => {
 });
 
 app.post("/clients", async (req, res) => {
-    try {
-        const { name, email } = req.body;
-        const q = `
-            INSERT INTO clients (name, email)
-            VALUES ($1, $2) 
-            RETURNING id, name, email
-        `;
-        const result = await pool.query(q, [name, email]);
-        return res.status(201).json(result.rows[0]);
-    } catch (e) {
-        console.log(e);
-        return res.status(500).json({ message: e.message });
-    }
+  try {
+    const { name, email, department_id } = req.body;
+
+    const q = `
+      INSERT INTO clients (name, email, department_id)
+      VALUES ($1, $2, $3)
+      RETURNING id, name, email, department_id
+    `;
+    const result = await pool.query(q, [name, email, department_id || null]);
+
+    return res.status(201).json(result.rows[0]);
+  } catch (e) {
+    console.log(e);
+    return res.status(500).json({ message: e.message });
+  }
 });
+
 
 /**
  *  Login
@@ -134,25 +137,22 @@ app.get("/me", /*requireAuth,*/ async (req, res) => {
 app.put("/clients/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    if (!id) {
-      return res.status(400).json({ message: "Client ID is required" });
-    }
+    const { name, email, department_id } = req.body;
 
-
-    const { name, email } = req.body;
     const q = `
       UPDATE clients
-      SET name = $1, email = $2
-        WHERE id = $3
-        RETURNING id, name, email
+      SET name = $1, email = $2, department_id = $3
+      WHERE id = $4
+      RETURNING id, name, email, department_id
     `;
 
-    const result = await pool.query(q, [name, email, id]);
+    const result = await pool.query(q, [name, email, department_id || null, id]);
     return res.status(200).json(result.rows[0]);
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
 });
+
 
 
 app.delete("/clients/:id", async (req, res) => {
@@ -192,13 +192,19 @@ app.get("/clients/:id", async (req, res) => {
 
 app.get("/clients", async (req, res) => {
   try {
-    const q = `SELECT id, name, email FROM clients ORDER BY id`;
+    const q = `
+      SELECT c.id, c.name, c.email, c.department_id, d.name AS department_name
+      FROM clients c
+      LEFT JOIN department d ON d.id = c.department_id
+      ORDER BY c.id
+    `;
     const result = await pool.query(q);
     return res.json(result.rows);
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
 });
+
 
 
 app.get("/department", async (req, res) => {

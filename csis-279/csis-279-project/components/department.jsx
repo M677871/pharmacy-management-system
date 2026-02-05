@@ -1,75 +1,63 @@
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 
-const Department = () =>
-{
-    const API = "http://localhost:3001/department";
-    useEffect(() =>
-    {
-        reloadDepatemts();
-    }, []);
+const Department = () => {
+  const API = "http://localhost:3001/department";
 
-    const [departments, setDepartments] = useState([]);
-    const [form, setForm] = useState({name: "", description: ""});
-    const [editingId, setEditingId] = useState(null);
+  useEffect(() => {
+    reloadDepatemts();
+  }, []);
 
-    const handleEdit = (client) =>
-    {
-        setForm({name: client.name , description: client.description})
-        setEditingId(client.id);
+  const [departments, setDepartments] = useState([]);
+  const [form, setForm] = useState({ name: "", description: "" });
+  const [editingId, setEditingId] = useState(null);
+
+  const handleEdit = (dept) => {
+    setForm({ name: dept.name, description: dept.description });
+    setEditingId(dept.id);
+  };
+
+  const clear = () => {
+    setForm({ name: "", description: "" });
+    setEditingId(null);
+  };
+
+  const reloadDepatemts = async () => {
+    const res = await fetch(API);
+    const data = await res.json();
+    setDepartments(data);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (editingId) {
+      await fetch(`${API}/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+    } else {
+      await fetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
     }
 
-    const clear = () =>
-    {
-        setForm({name: "", description: ""});
-        setEditingId(null);
-    }
+    clear();
+    reloadDepatemts();
+  };
 
-    const reloadDepatemts = async() =>
-    {
-        const res = await fetch(API);
-        const data = await res.json();
-        setDepartments(data);
-    }
+  const handleDelete = async (id) => {
+    await fetch(`${API}/${id}`, { method: "DELETE" });
+    reloadDepatemts();
+  };
 
-    const handleSubmit = async(e) =>
-    {
-        e.preventDefault();
-        if(editingId)
-        {
-            await fetch(`${API}/${editingId}`, 
-                {
-                    method: "PUT",
-                    headers: {"Content-Type" :"application/json"},
-                    body: JSON.stringify(form)
+  return (
+    <>
+      <h3>Departments</h3>
 
-                }
-            )
-        }
-        else{
-               await fetch(`${API}`, 
-                {
-                    method: "POST",
-                    headers: {"Content-Type" :"application/json"},
-                    body: JSON.stringify(form)
-
-                }
-            )
-
-        }
-        clear();
-        reloadDepatemts();
-
-    }
-    const handleDelete = async(id) =>
-    {
-        await fetch(`${API}/${id}`, {method: "DELETE"});
-        reloadDepatemts();
-    }
-
-    return (
-        <>
-        <h3>Departments</h3>
-    <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit}>
         <input
           type="text"
           value={form.name}
@@ -85,13 +73,12 @@ const Department = () =>
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           required
         />
-       
 
         <button type="submit">{!editingId ? "add" : "update"}</button>
-
-        <button onClick={clear}>clear</button>
+        <button type="button" onClick={clear}>
+          clear
+        </button>
       </form>
-
 
       <table border="1" cellPadding="8">
         <thead>
@@ -121,4 +108,5 @@ const Department = () =>
     </>
   );
 };
-export default Department
+
+export default Department;
