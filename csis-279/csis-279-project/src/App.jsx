@@ -8,12 +8,14 @@ import WeightConverter from '../components/weightConverter.jsx'
 import BmiCalculator  from '../components/bmiCalculator.jsx'
 import Calculator from '../components/calculator.jsx'
 import Clients from '../components/clients.jsx'
+import Department from '../components/department.jsx'
 
 function App() {
   
 return(
   <>
     {/* <Calculator/> */}
+    <Department/>
     <Clients/>
   </>
 )

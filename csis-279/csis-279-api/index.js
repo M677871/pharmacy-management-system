@@ -200,6 +200,83 @@ app.get("/clients", async (req, res) => {
   }
 });
 
+
+app.get("/department", async (req, res) => {
+  try{
+    const q = `select * from department`;
+    const result = await pool.query(q);
+    return res.status(200).json(result.rows);
+  }
+  catch(e)
+  {
+    res.status(500).json({message : e.message})
+  }
+})
+
+
+app.post("/department", async (req, res) =>
+{
+  try {
+    const {name , description } = req.body;
+
+    const query = ` insert into department (name , description) values ($1, $2) returning *`;
+    const result = await pool.query(query, [name, description]);
+    res.status(201).json(result.rows[0]);
+
+  }
+  catch(e)
+  {
+    console.log(e);
+    return res.status(500).json({message: e.message});
+  }
+})
+
+app.put("/department/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description } = req.body;
+
+    if (!name || !description) {
+      return res.status(400).json({ message: "name and description are required" });
+    }
+
+    const query = `
+      UPDATE department
+      SET name = $1, description = $2
+      WHERE id = $3
+      RETURNING *
+    `;
+    const result = await pool.query(query, [name, description, id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "department not found" });
+    }
+
+    return res.status(200).json(result.rows[0]);
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+});
+
+
+app.delete("/department/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const query = `DELETE FROM department WHERE id = $1`;
+    const result = await pool.query(query, [id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "department not found" });
+    }
+
+    return res.status(204).send();
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+});
+
+
 app.listen(process.env.PORT || 3001, () => {
   console.log(`server is running on port: ${process.env.PORT || 3001}`);
 });
