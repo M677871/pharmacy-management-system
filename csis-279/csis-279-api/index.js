@@ -18,26 +18,26 @@ const pool = new Pool({
   port: 5432,
 });
 
-//  Middleware: protect routes using Bearer token
-// const requireAuth = (req, res, next) =>
-// {
-//   try {
-//     const header = req.headers.authorization;
-//     if (!header) 
-//         return res.status(401).json({ message: "Missing Authorization header" });
+// Middleware: protect routes using Bearer token
+const requireAuth = (req, res, next) =>
+{
+  try {
+    const header = req.headers.authorization;
+    if (!header) 
+        return res.status(401).json({ message: "Missing Authorization header" });
 
-//     const [type, token] = header.split(" ");
-//     if (type !== "Bearer" || !token) {
-//       return res.status(401).json({ message: "Use: Authorization: Bearer <token>" });
-//     }
+    const [type, token] = header.split(" ");
+    if (type !== "Bearer" || !token) {
+      return res.status(401).json({ message: "Use: Authorization: Bearer <token>" });
+    }
 
-//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-//     req.user = decoded;
-//     next();
-//   } catch {
-//     return res.status(401).json({ message: "Invalid or expired token" });
-//   }
-// }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+}
 
 
 app.post("/auth/register", async (req, res) => {

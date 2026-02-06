@@ -8,6 +8,7 @@ const Clients = () => {
     email: "",
     department_id: "",
   });
+
   const [editngId, setEditingId] = useState(null);
 
   const API = "http://localhost:3001/clients";
