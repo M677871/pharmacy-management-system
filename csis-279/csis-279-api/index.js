@@ -124,7 +124,7 @@ app.post("/auth/login", async (req, res) => {
 /**
  * Example protected route: return ONLY the logged-in client
  */
-app.get("/me", /*requireAuth,*/ async (req, res) => {
+app.get("/me", requireAuth, async (req, res) => {
   try {
     const q = `SELECT id, name, email FROM clients WHERE id = $1`;
     const result = await pool.query(q, [req.user.id]);
@@ -175,11 +175,11 @@ app.delete("/clients/:id", async (req, res) => {
 app.get("/clients/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    // const requestedId = Number(req.params.id);
+    const requestedId = Number(req.params.id);
 
-    // if (requestedId !== req.user.id) {
-    //   return res.status(403).json({ message: "Forbidden: you can only access your own data" });
-    // }
+    if (requestedId !== req.user.id) {
+      return res.status(403).json({ message: "Forbidden: you can only access your own data" });
+    }
 
     const q = `SELECT id, name, email FROM clients WHERE id = $1`;
     const result = await pool.query(q, [id]);
