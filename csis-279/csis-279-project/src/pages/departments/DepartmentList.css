@@ -1,0 +1,71 @@
+/* Department List Styles */
+.departments-list-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.departments-list-container .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.departments-list-container .page-header h1 {
+  color: #333;
+  margin: 0;
+}
+
+.departments-list-container .empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.departments-list-container .empty-state p {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.departments-list-container .table-container {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.departments-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.departments-table th {
+  background-color: #f8f9fa;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.departments-table td {
+  padding: 12px;
+  border-bottom: 1px solid #dee2e6;
+  vertical-align: middle;
+}
+
+.departments-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.departments-table .actions {
+  white-space: nowrap;
+}
+
+.departments-table .actions .btn {
+  margin-right: 8px;
+}
