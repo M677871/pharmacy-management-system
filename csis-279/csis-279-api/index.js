@@ -174,14 +174,9 @@ app.delete("/clients/:id", async (req, res) => {
  */
 app.get("/clients/:id", async (req, res) => {
   try {
-    const id = req.params.id;
-    const requestedId = Number(req.params.id);
+    const { id } = req.params;
 
-    if (requestedId !== req.user.id) {
-      return res.status(403).json({ message: "Forbidden: you can only access your own data" });
-    }
-
-    const q = `SELECT id, name, email FROM clients WHERE id = $1`;
+    const q = `SELECT * FROM clients WHERE id = $1`;
     const result = await pool.query(q, [id]);
 
     return res.json(result.rows[0]);
@@ -282,6 +277,19 @@ app.delete("/department/:id", async (req, res) => {
   }
 });
 
+app.get("/department/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const query = `SELECT * FROM department WHERE id = $1`;
+    const result = await pool.query(query, [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "department not found" });
+    }
+    return res.status(200).json(result.rows[0]);
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+});
 
 app.listen(process.env.PORT || 3001, () => {
   console.log(`server is running on port: ${process.env.PORT || 3001}`);
