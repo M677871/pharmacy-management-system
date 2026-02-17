@@ -1,104 +1,55 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import clientService from "../../services/client.service.js";
-import LoadingSpinner from "../../components/ui/LoadingSpinner.jsx";
-import ErrorMessage from "../../components/ui/ErrorMessage.jsx";
-import { useApi } from "../../hooks/useApi.js";
-import "./ClientList.css";
+import { deleteClient, getClients } from "../../services/client.service";
 
-const ClientsList = () => {
-  const [clients, setClients] = useState([]);
-  const { loading, error, execute, clearError } = useApi();
+const ClientList = () => {
+    const [clients, setClients] = useState([]);
 
-  useEffect(() => {
-    loadClients();
-  }, []);
+    useEffect(() => {
+        loadClients();
+    }, []);
 
-  const loadClients = async () => {
-    await execute(
-      () => clientService.getClients(),
-      (data) => setClients(data)
-    );
-  };
-
-  const handleDelete = async (id, clientName) => {
-    if (window.confirm(`Are you sure you want to delete "${clientName}"?`)) {
-      try {
-        await execute(() => clientService.deleteClient(id));
-        await loadClients(); // Reload the list after deletion
-      } catch (error) {
-        console.error('Failed to delete client:', error);
-      }
+    const loadClients = async () => {
+        const data = await getClients();
+        setClients(data)
     }
-  };
 
-  if (loading) {
-    return <LoadingSpinner message="Loading clients..." />;
-  }
+    const handleDelete = async (id) => {
+        await deleteClient(id);
+        loadClients();
+    }
 
-  return (
-    <div className="clients-list-container">
-      <div className="page-header">
-        <h1>Clients Management</h1>
-        <Link to="/clients/new" className="btn btn-primary">
-          Add New Client
-        </Link>
-      </div>
+    return (
+        <>
+            <h3>Client List</h3>
+            <Link to="/clients/new">Create</Link>
+            <table border="1" cellPadding="8">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>NAME</th>
+                        <th>EMAIL</th>
+                        <th>DEPARTMENT</th>
+                        <th colSpan={2}>ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {
+                        clients.map(client => (
+                            <tr key={client.id}>
+                                <td>{client.id}</td>
+                                <td>{client.name}</td>
+                                <td>{client.email}</td>
+                                <td>{client.department_name || "No Department"}</td>
+                                <td><Link to={`/clients/${client.id}/edit`}>Edit</Link></td>
+                                <td><button onClick={() => handleDelete(client.id)}>Delete</button></td>
+                            </tr>
+                        ))
+                    }
+                </tbody>
+            </table>
+        </>
+    )
+}
 
-      <ErrorMessage 
-        message={error} 
-        onRetry={loadClients} 
-        onDismiss={clearError} 
-      />
-
-      {clients.length === 0 ? (
-        <div className="empty-state">
-          <p>No clients found.</p>
-          <Link to="/clients/new" className="btn btn-primary">
-            Create your first client
-          </Link>
-        </div>
-      ) : (
-        <div className="table-container">
-          <table className="clients-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Department</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {clients.map((client) => (
-                <tr key={client.id}>
-                  <td>{client.id}</td>
-                  <td>{client.name}</td>
-                  <td>{client.email}</td>
-                  <td>{client.department_name || "No Department"}</td>
-                  <td className="actions">
-                    <Link 
-                      to={`/clients/${client.id}/edit`} 
-                      className="btn btn-secondary btn-sm"
-                    >
-                      Edit
-                    </Link>
-                    <button 
-                      onClick={() => handleDelete(client.id, client.name)}
-                      className="btn btn-danger btn-sm"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default ClientsList;
+export default ClientList;

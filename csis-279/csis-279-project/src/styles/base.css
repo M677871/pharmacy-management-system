@@ -1,27 +1,89 @@
-body{
-    font-family: system-ui, sans-serif;
-    margin: 0
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.nav {
-    padding: 1rem;
-    border-bottom: 1px solid #ddd;
-}
-
-.nav a {
-    margin-right: 1rem;
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  background-color: #f4f4f4;
 }
 
 .container {
-    padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.nav {
+  background: #333;
+  color: white;
+  padding: 1rem;
+}
+
+.nav a {
+  color: white;
+  text-decoration: none;
+  margin-right: 1rem;
+}
+
+.nav a:hover {
+  text-decoration: underline;
 }
 
 table {
-    width: 100%;
-    border-collapse: collapse;
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  background: white;
 }
 
-th, td {
-    padding: 0.5rem;
-    border-bottom: 1px solid #ddd;
+table th, table td {
+  padding: 10px;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+table th {
+  background-color: #f2f2f2;
+}
+
+form {
+  background: white;
+  padding: 20px;
+  margin: 20px 0;
+  border-radius: 5px;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+}
+
+button {
+  background: #333;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  margin: 10px 5px 10px 0;
+}
+
+button:hover {
+  background: #555;
+}
+
+a {
+  color: #333;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
 }

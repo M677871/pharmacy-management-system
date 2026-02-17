@@ -1,39 +1,25 @@
-import apiService from './api.js';
+const BASE = "http://localhost:3001/clients";
 
-const clientService = {
-  // Get all clients with department information
-  getClients: async () => {
-    return await apiService.get('/clients');
-  },
+export const getClients = async () => {
+    const res = await fetch(`${BASE}`);
+    const data = await res.json();
+    return data;
+}
 
-  // Get client by ID
-  getClient: async (id) => {
-    return await apiService.get(`/clients/${id}`);
-  },
+export const getClient = async(id) => {
+    const res = await fetch(`${BASE}/${id}`);
+    const data = await res.json();
+    return data;
+}
 
-  // Create a new client
-  createClient: async (clientData) => {
-    return await apiService.post('/clients', clientData);
-  },
+export const saveClient = async(data, id) => {
+    await fetch(id ? `${BASE}/${id}` : BASE, {
+        method: id ? "PUT" : "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+    })
+}
 
-  // Update existing client
-  updateClient: async (id, clientData) => {
-    return await apiService.put(`/clients/${id}`, clientData);
-  },
-
-  // Delete client
-  deleteClient: async (id) => {
-    return await apiService.delete(`/clients/${id}`);
-  },
-
-  // Create or update client (unified method)
-  saveClient: async (clientData, id = null) => {
-    if (id) {
-      return await clientService.updateClient(id, clientData);
-    } else {
-      return await clientService.createClient(clientData);
-    }
-  }
-};
-
-export default clientService;
+export const deleteClient = async(id) => {
+    await fetch(`${BASE}/${id}`, {method: "DELETE"});
+}
