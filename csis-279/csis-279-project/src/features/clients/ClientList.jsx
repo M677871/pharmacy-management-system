@@ -22,7 +22,7 @@ const ClientList = () => {
     return (
         <>
             <h3>Client List</h3>
-            <Link to="/clients/new">Create</Link>
+           <button><Link to="/clients/new">Create</Link></button> 
             <table border="1" cellPadding="8">
                 <thead>
                     <tr>
