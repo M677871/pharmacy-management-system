@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {Link} from "react-router-dom";
-import { deleteDepartement, getDepartements } from "../../services/departement.service";
+import { deleteDepartement, getDepartements } from "../services/departments.service.js";
 
 const DepartementList = () => {
     const [departements, setDepartements] = useState([]);

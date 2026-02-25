@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   getDepartement,
   saveDepartement,
-} from "../../services/departement.service";
+} from "../services/departments.service.js";
 
 const DepartementForm = () => {
   const { id } = useParams();

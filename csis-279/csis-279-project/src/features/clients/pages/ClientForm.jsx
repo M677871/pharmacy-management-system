@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getClient, saveClient } from "../../services/client.service";
-import { getDepartements } from "../../services/departement.service";
+import { getClient, saveClient } from "../services/client.service.js";
+import { getDepartements } from "../../departments/services/departments.service.js";
 
 const ClientForm = () => {
     const [form, setForm] = useState({name: "", email: "", department_id: ""});

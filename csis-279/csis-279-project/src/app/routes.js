@@ -1,9 +1,10 @@
 import About from "../pages/About";
-import ClientForm from "../features/clients/ClientForm";
-import ClientList from "../features/clients/ClientList";
+import ClientForm from "../features/clients/pages/ClientForm";
+import ClientList from "../features/clients/pages/ClientList";
 import Home from "../pages/Home";
-import DepartementForm from "../pages/departements/DepartementForm";
-import DepartementList from "../pages/departements/DepartementList";
+import DepartementForm from "../features/departments/pages/DepartmentForm";
+import DepartementList from "../features/departments/pages/DepartmentList";
+
 
 
 export const routes = [

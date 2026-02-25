@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { deleteClient, getClients } from "../../services/client.service";
+import { deleteClient, getClients } from "../services/client.service.js"
 
 const ClientList = () => {
     const [clients, setClients] = useState([]);
@@ -22,7 +22,7 @@ const ClientList = () => {
     return (
         <>
             <h3>Client List</h3>
-           <button><Link to="/clients/new">Create</Link></button> 
+           <Link to="/clients/new">Create</Link>
             <table border="1" cellPadding="8">
                 <thead>
                     <tr>
