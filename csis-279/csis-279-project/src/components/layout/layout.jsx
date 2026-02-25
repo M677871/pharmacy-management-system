@@ -1,12 +1,15 @@
 import NavBar from "./NavBar";
+import { Container } from "@mui/material";
 
-const Layout = ({children}) => {
-    return(
+const Layout = ({ children }) => {
+    return (
         <>
             <NavBar />
-            <main className="container">{children}</main>
+            <Container maxWidth="lg" sx={{ mt: 4 }}>
+                {children}
+            </Container>
         </>
-    )
-}
+    );
+};
 
 export default Layout;

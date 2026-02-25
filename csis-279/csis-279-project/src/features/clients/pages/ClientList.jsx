@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { deleteClient, getClients } from "../services/client.service.js"
+import { deleteClient, getClients } from "../services/client.service.js";
+import {
+    Typography, Button, Table, TableBody, TableCell, TableContainer,
+    TableHead, TableRow, Paper, IconButton, Box
+} from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const ClientList = () => {
     const [clients, setClients] = useState([]);
@@ -11,45 +17,55 @@ const ClientList = () => {
 
     const loadClients = async () => {
         const data = await getClients();
-        setClients(data)
-    }
+        setClients(data);
+    };
 
     const handleDelete = async (id) => {
         await deleteClient(id);
         loadClients();
-    }
+    };
 
     return (
-        <>
-            <h3>Client List</h3>
-           <Link to="/clients/new">Create</Link>
-            <table border="1" cellPadding="8">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>NAME</th>
-                        <th>EMAIL</th>
-                        <th>DEPARTMENT</th>
-                        <th colSpan={2}>ACTIONS</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {
-                        clients.map(client => (
-                            <tr key={client.id}>
-                                <td>{client.id}</td>
-                                <td>{client.name}</td>
-                                <td>{client.email}</td>
-                                <td>{client.department_name || "No Department"}</td>
-                                <td><Link to={`/clients/${client.id}/edit`}>Edit</Link></td>
-                                <td><button onClick={() => handleDelete(client.id)}>Delete</button></td>
-                            </tr>
-                        ))
-                    }
-                </tbody>
-            </table>
-        </>
-    )
-}
+        <Box>
+            <Typography variant="h4" gutterBottom>Client List</Typography>
+            <Button variant="contained" component={Link} to="/clients/new" sx={{ mb: 2 }}>
+                Create
+            </Button>
+            <TableContainer component={Paper}>
+                <Table>
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>ID</TableCell>
+                            <TableCell>NAME</TableCell>
+                            <TableCell>EMAIL</TableCell>
+                            <TableCell>DEPARTMENT</TableCell>
+                            <TableCell align="center" colSpan={2}>ACTIONS</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {clients.map(client => (
+                            <TableRow key={client.id}>
+                                <TableCell>{client.id}</TableCell>
+                                <TableCell>{client.name}</TableCell>
+                                <TableCell>{client.email}</TableCell>
+                                <TableCell>{client.department_name || "No Department"}</TableCell>
+                                <TableCell>
+                                    <IconButton component={Link} to={`/clients/${client.id}/edit`} color="primary">
+                                        <EditIcon />
+                                    </IconButton>
+                                </TableCell>
+                                <TableCell>
+                                    <IconButton onClick={() => handleDelete(client.id)} color="error">
+                                        <DeleteIcon />
+                                    </IconButton>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+        </Box>
+    );
+};
 
 export default ClientList;

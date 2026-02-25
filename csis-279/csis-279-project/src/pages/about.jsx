@@ -1,10 +1,12 @@
+import { Typography, Box } from "@mui/material";
+
 const About = () => {
     return (
-        <>
-            <h1>About Us</h1>
-            <p>Mininal crud operations</p>
-        </>
-    )
-}
+        <Box>
+            <Typography variant="h4" gutterBottom>About Us</Typography>
+            <Typography variant="body1">Minimal crud operations</Typography>
+        </Box>
+    );
+};
 
 export default About;
