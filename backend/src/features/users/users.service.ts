@@ -13,8 +13,6 @@ export class UsersService {
   ) {}
 
   async create(dto: CreateUserDto): Promise<User> {
-    // Intentionally minimal log to assist local debugging during tests
-    console.debug('[UsersService] create() called for', dto.email);
     const hashedPassword = await bcrypt.hash(dto.password, 12);
     const user = this.usersRepository.create({
       ...dto,
