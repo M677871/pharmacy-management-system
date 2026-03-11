@@ -59,3 +59,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Documents and non-code files
 *.pdf
+
+# Legacy course project folders
+csis-279/
