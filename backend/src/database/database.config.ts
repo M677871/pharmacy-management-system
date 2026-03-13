@@ -10,16 +10,23 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres' as const,
-        host: config.get<string>('DATABASE_HOST', 'localhost'),
-        port: config.get<number>('DATABASE_PORT', 5432),
-        username: config.get<string>('DATABASE_USER', 'postgres'),
-        password: config.get<string>('DATABASE_PASSWORD', 'postgres'),
-        database: config.get<string>('DATABASE_NAME', 'pharmacy'),
-        autoLoadEntities: true,
-        synchronize: config.get<string>('NODE_ENV') !== 'production',
-      }),
+      useFactory: (config: ConfigService) => {
+        const synchronizeOverride = config.get<string>('DATABASE_SYNCHRONIZE');
+
+        return {
+          type: 'postgres' as const,
+          host: config.get<string>('DATABASE_HOST', 'localhost'),
+          port: config.get<number>('DATABASE_PORT', 5432),
+          username: config.get<string>('DATABASE_USER', 'postgres'),
+          password: config.get<string>('DATABASE_PASSWORD', 'postgres'),
+          database: config.get<string>('DATABASE_NAME', 'pharmacy'),
+          autoLoadEntities: true,
+          synchronize:
+            synchronizeOverride !== undefined
+              ? synchronizeOverride === 'true'
+              : config.get<string>('NODE_ENV') !== 'production',
+        };
+      },
     }),
   ],
 })
