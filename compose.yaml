@@ -1,0 +1,69 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pharmacy}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-pharmacy}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${POSTGRES_USER:-postgres}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DATABASE_NAME: ${POSTGRES_DB:-pharmacy}
+      DATABASE_SYNCHRONIZE: ${DATABASE_SYNCHRONIZE:-true}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-this-access-secret-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-this-refresh-secret-in-production}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-15m}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-7d}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-not-configured}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-not-configured}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL:-http://localhost:3000/api/auth/google/callback}
+      FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-not-configured}
+      FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:-not-configured}
+      FACEBOOK_CALLBACK_URL: ${FACEBOOK_CALLBACK_URL:-http://localhost:3000/api/auth/facebook/callback}
+      INSTAGRAM_CLIENT_ID: ${INSTAGRAM_CLIENT_ID:-not-configured}
+      INSTAGRAM_CLIENT_SECRET: ${INSTAGRAM_CLIENT_SECRET:-not-configured}
+      INSTAGRAM_CALLBACK_URL: ${INSTAGRAM_CALLBACK_URL:-http://localhost:3000/api/auth/instagram/callback}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+
+volumes:
+  postgres_data:
