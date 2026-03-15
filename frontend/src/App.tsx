@@ -7,6 +7,7 @@ import { TotpSetupPage } from './features/auth/pages/TotpSetupPage';
 import { TotpVerifyPage } from './features/auth/pages/TotpVerifyPage';
 import { SocialCallbackPage } from './features/auth/pages/SocialCallbackPage';
 import { DashboardPage } from './features/dashboard/pages/DashboardPage';
+import { InventoryPage } from './features/inventory/pages/InventoryPage';
 import { ProtectedRoute } from './shared/components/ProtectedRoute';
 
 function App() {
@@ -31,6 +32,14 @@ function App() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/inventory"
+        element={
+          <ProtectedRoute>
+            <InventoryPage />
           </ProtectedRoute>
         }
       />

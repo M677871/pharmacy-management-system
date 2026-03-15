@@ -62,7 +62,23 @@ body {
   transition: border-color 0.2s;
 }
 
+.form-group select {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: #fff;
+  transition: border-color 0.2s;
+}
+
 .form-group input:focus {
+  outline: none;
+  border-color: #4361ee;
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+}
+
+.form-group select:focus {
   outline: none;
   border-color: #4361ee;
   box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
@@ -255,6 +271,11 @@ body {
   color: #16213e;
 }
 
+.dashboard-copy {
+  margin-bottom: 1rem;
+  color: #4b5563;
+}
+
 .profile-field {
   display: flex;
   padding: 0.4rem 0;
@@ -301,4 +322,209 @@ body {
   min-height: 100vh;
   font-size: 1.1rem;
   color: #6b7280;
+}
+
+/* ── Inventory ────────────────────────────────────────────────── */
+.inventory-page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+.inventory-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.inventory-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #4361ee;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.inventory-subtitle {
+  color: #4b5563;
+  max-width: 560px;
+}
+
+.inventory-link {
+  width: auto;
+  text-decoration: none;
+}
+
+.inventory-grid {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.inventory-grid-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.inventory-grid-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.inventory-panel {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+  padding: 1.25rem;
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.inventory-search {
+  width: 260px;
+  max-width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.inventory-inline-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.inventory-table-wrapper {
+  overflow-x: auto;
+}
+
+.inventory-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.inventory-table th,
+.inventory-table td {
+  text-align: left;
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.92rem;
+}
+
+.inventory-table-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.inventory-inline-button {
+  width: auto;
+  margin-top: 0;
+  padding: 0.55rem 0.85rem;
+}
+
+.inventory-batches {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.inventory-batches ul,
+.inventory-result-card ul {
+  margin-top: 0.75rem;
+  padding-left: 1rem;
+}
+
+.cart-list,
+.return-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cart-row,
+.return-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 80px 110px auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.return-row {
+  grid-template-columns: minmax(0, 1fr) 96px;
+}
+
+.cart-row input,
+.return-row input {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.cart-row p,
+.return-row p,
+.inventory-empty {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.inventory-summary-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1rem 0;
+  padding: 0.85rem 1rem;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.inventory-result-card {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.inventory-lookup-button {
+  width: auto;
+  align-self: end;
+  margin-top: 0;
+}
+
+@media (max-width: 1024px) {
+  .inventory-grid-three,
+  .inventory-grid-two {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .inventory-header,
+  .panel-heading {
+    flex-direction: column;
+  }
+
+  .inventory-inline-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .cart-row {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-table-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
