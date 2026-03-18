@@ -1,25 +1,27 @@
 import {
-  Injectable,
-  UnauthorizedException,
-  BadRequestException,
   ConflictException,
+  Injectable,
+  BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
 import { authenticator } from 'otplib';
 import * as QRCode from 'qrcode';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
+import { PasswordResetService } from './password-reset/password-reset.service';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService: UsersService,
-    private jwtService: JwtService,
-    private configService: ConfigService,
+    private readonly usersService: UsersService,
+    private readonly passwordResetService: PasswordResetService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   // ── Email / Password ────────────────────────────────────────────────
@@ -90,48 +92,11 @@ export class AuthService {
   // ── Forgot / Reset Password ─────────────────────────────────────────
 
   async forgotPassword(email: string) {
-    const user = await this.usersService.findByEmail(email);
-    if (!user) {
-      // Don't reveal whether email exists
-      return { message: 'If the email exists, a reset link has been sent' };
-    }
-
-    const token = crypto.randomBytes(32).toString('hex');
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-
-    await this.usersService.update(user.id, {
-      passwordResetToken: hashedToken,
-      passwordResetExpires: new Date(Date.now() + 3_600_000), // 1 hour
-    });
-
-    // In production, send this token via email.
-    // For development / testing, it is returned in the response.
-    return {
-      message: 'If the email exists, a reset link has been sent',
-      resetToken: token, // DEV ONLY — remove in production
-    };
+    return this.passwordResetService.forgotPassword(email);
   }
 
-  async resetPassword(token: string, newPassword: string) {
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-    const user = await this.usersService.findByResetToken(hashedToken);
-
-    if (
-      !user ||
-      !user.passwordResetExpires ||
-      user.passwordResetExpires < new Date()
-    ) {
-      throw new BadRequestException('Invalid or expired reset token');
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
-    await this.usersService.update(user.id, {
-      password: hashedPassword,
-      passwordResetToken: null,
-      passwordResetExpires: null,
-    });
-
-    return { message: 'Password reset successful' };
+  async resetPassword(dto: ResetPasswordDto) {
+    return this.passwordResetService.resetPassword(dto);
   }
 
   // ── TOTP 2FA ────────────────────────────────────────────────────────
@@ -276,6 +241,8 @@ export class AuthService {
       totpSecret,
       passwordResetToken,
       passwordResetExpires,
+      passwordResetMethod,
+      passwordResetAttempts,
       ...safe
     } = user;
     return safe;

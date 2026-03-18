@@ -69,7 +69,7 @@ export class AuthController {
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPassword(dto.token, dto.newPassword);
+    return this.authService.resetPassword(dto);
   }
 
   //Profile 
@@ -83,6 +83,8 @@ export class AuthController {
       totpSecret,
       passwordResetToken,
       passwordResetExpires,
+      passwordResetMethod,
+      passwordResetAttempts,
       ...safe
     } = user;
     return safe;

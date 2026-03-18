@@ -11,9 +11,16 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { FacebookStrategy } from './strategies/facebook.strategy';
 import { InstagramStrategy } from './strategies/instagram.strategy';
+import { PasswordResetModule } from './password-reset/password-reset.module';
 
 @Module({
-  imports: [UsersModule, PassportModule, ConfigModule, JwtModule.register({})],
+  imports: [
+    UsersModule,
+    PasswordResetModule,
+    PassportModule,
+    ConfigModule,
+    JwtModule.register({}),
+  ],
   providers: [
     AuthService,
     LocalStrategy,
