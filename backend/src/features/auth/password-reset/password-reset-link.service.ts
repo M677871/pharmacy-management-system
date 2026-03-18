@@ -21,7 +21,7 @@ export class PasswordResetLinkService {
     private readonly configService: ConfigService,
   ) {}
 
-  async createReset(userId: string, email: string) {
+  async createReset(userId: string, email: string): Promise<void> {
     const resetToken = crypto.randomBytes(32).toString('base64url');
     const hashedResetToken = this.hashResetToken(resetToken);
 
@@ -45,7 +45,10 @@ export class PasswordResetLinkService {
     }
   }
 
-  async resetPassword(resetToken: string, newPassword: string) {
+  async resetPassword(
+    resetToken: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
     const user = await this.usersService.findByResetToken(
       this.hashResetToken(resetToken),
       PasswordResetMethod.LINK,
@@ -76,11 +79,11 @@ export class PasswordResetLinkService {
     return { message: 'Password reset successful' };
   }
 
-  private hashResetToken(token: string) {
+  private hashResetToken(token: string): string {
     return crypto.createHash('sha256').update(token).digest('hex');
   }
 
-  private async clearResetState(userId: string) {
+  private async clearResetState(userId: string): Promise<void> {
     await this.usersService.update(userId, {
       passwordResetToken: null,
       passwordResetExpires: null,
@@ -89,7 +92,7 @@ export class PasswordResetLinkService {
     });
   }
 
-  private getResetTokenTtlMs() {
+  private getResetTokenTtlMs(): number {
     const ttlMinutes = Number(
       this.configService.get<string>('PASSWORD_RESET_TOKEN_TTL_MINUTES', '60'),
     );
