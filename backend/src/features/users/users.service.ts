@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { User } from './entities/user.entity';
+import { PasswordResetMethod, User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
@@ -13,21 +13,29 @@ export class UsersService {
   ) {}
 
   async create(dto: CreateUserDto): Promise<User> {
+    const email = dto.email.trim().toLowerCase();
     const hashedPassword = await bcrypt.hash(dto.password, 12);
     const user = this.usersRepository.create({
       ...dto,
+      email,
       password: hashedPassword,
     });
     return this.usersRepository.save(user);
   }
 
   async createSocialUser(data: Partial<User>): Promise<User> {
-    const user = this.usersRepository.create(data);
+    const user = this.usersRepository.create({
+      ...data,
+      email: data.email?.trim().toLowerCase(),
+    });
     return this.usersRepository.save(user);
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { email } });
+    return this.usersRepository
+      .createQueryBuilder('user')
+      .where('LOWER(user.email) = LOWER(:email)', { email: email.trim() })
+      .getOne();
   }
 
   async findById(id: string): Promise<User | null> {
@@ -46,10 +54,19 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { instagramId } });
   }
 
-  async findByResetToken(hashedToken: string): Promise<User | null> {
-    return this.usersRepository.findOne({
-      where: { passwordResetToken: hashedToken },
-    });
+  async findByResetToken(
+    hashedToken: string,
+    method?: PasswordResetMethod,
+  ): Promise<User | null> {
+    const query = this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.passwordResetToken = :hashedToken', { hashedToken });
+
+    if (method) {
+      query.andWhere('user.passwordResetMethod = :method', { method });
+    }
+
+    return query.getOne();
   }
 
   async update(id: string, data: Partial<User>): Promise<User> {
