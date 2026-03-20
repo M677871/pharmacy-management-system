@@ -1,7 +1,9 @@
 import api from '../../../shared/api/axios';
 import type {
   AuthResponse,
+  ForgotPasswordResponse,
   LoginResponse,
+  ResetPasswordPayload,
   TotpSetupResponse,
   User,
 } from '../types/auth.types';
@@ -36,23 +38,16 @@ export const authService = {
     await api.post('/auth/logout');
   },
 
-  async forgotPassword(
-    email: string,
-  ): Promise<{ message: string; resetToken?: string }> {
-    const res = await api.post<{ message: string; resetToken?: string }>(
-      '/auth/forgot-password',
-      { email },
-    );
+  async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+    const res = await api.post<ForgotPasswordResponse>('/auth/forgot-password', {
+      email,
+    });
     return res.data;
   },
 
-  async resetPassword(
-    token: string,
-    newPassword: string,
-  ): Promise<{ message: string }> {
+  async resetPassword(data: ResetPasswordPayload): Promise<{ message: string }> {
     const res = await api.post<{ message: string }>('/auth/reset-password', {
-      token,
-      newPassword,
+      ...data,
     });
     return res.data;
   },
