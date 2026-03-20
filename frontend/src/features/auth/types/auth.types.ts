@@ -30,3 +30,18 @@ export interface TotpSetupResponse {
   secret: string;
   qrCode: string;
 }
+
+export type PasswordResetMode = 'otp' | 'link';
+
+export interface ForgotPasswordResponse {
+  message: string;
+  mode: PasswordResetMode;
+  resetCode?: string;
+  expiresInMinutes?: number;
+}
+
+export interface ResetPasswordPayload {
+  token: string;
+  newPassword: string;
+  email?: string;
+}
