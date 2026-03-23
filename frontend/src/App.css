@@ -40,6 +40,49 @@ body {
   color: #16213e;
 }
 
+.auth-copy {
+  margin-bottom: 1rem;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.auth-info-card {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  color: #1d4ed8;
+  font-size: 0.92rem;
+}
+
+.auth-info-card p + p {
+  margin-top: 0.35rem;
+}
+
+.auth-dev-note {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  color: #9a3412;
+}
+
+.auth-dev-note span {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem;
+}
+
+.auth-dev-note code {
+  font-family: monospace;
+  font-size: 1rem;
+}
+
 /* ── Forms ────────────────────────────────────────────────────── */
 .form-group {
   margin-bottom: 1rem;
