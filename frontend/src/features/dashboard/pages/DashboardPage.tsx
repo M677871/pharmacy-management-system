@@ -63,6 +63,21 @@ export function DashboardPage() {
           {user.isTotpEnabled ? 'Manage 2FA' : 'Enable Two-Factor Auth'}
         </Link>
       </div>
+
+      <div className="profile-card">
+        <h2>Inventory + POS</h2>
+        <p className="dashboard-copy">
+          Use the staff workspace to receive stock, sell with FEFO allocation,
+          and process returns.
+        </p>
+        <Link
+          to="/inventory"
+          className="btn-primary"
+          style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}
+        >
+          Open inventory workspace
+        </Link>
+      </div>
     </div>
   );
 }
