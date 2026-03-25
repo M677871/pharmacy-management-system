@@ -42,6 +42,7 @@ describe('Auth – Registration & Login (e2e)', () => {
       expect(res.body).toHaveProperty('refreshToken');
       expect(res.body.user).toHaveProperty('id');
       expect(res.body.user.email).toBe(email);
+      expect(res.body.user.role).toBe('customer');
       expect(res.body.user).not.toHaveProperty('password');
       expect(res.body.user).not.toHaveProperty('refreshToken');
     });
@@ -69,6 +70,17 @@ describe('Auth – Registration & Login (e2e)', () => {
       await request(app.getHttpServer())
         .post('/api/auth/register')
         .send({ email: uniqueEmail(), password: 'short' })
+        .expect(400);
+    });
+
+    it('should reject role injection in public registration', async () => {
+      await request(app.getHttpServer())
+        .post('/api/auth/register')
+        .send({
+          email: uniqueEmail(),
+          password: DEFAULT_PASSWORD,
+          role: 'admin',
+        })
         .expect(400);
     });
   });
