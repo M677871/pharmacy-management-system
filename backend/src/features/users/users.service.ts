@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { PasswordResetMethod, User } from './entities/user.entity';
+import { PasswordResetMethod, User, UserRole } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { RegisterDto } from '../auth/dto/register.dto';
 
 @Injectable()
 export class UsersService {
@@ -13,6 +14,7 @@ export class UsersService {
   ) {}
 
   async create(dto: CreateUserDto): Promise<User> {
+    await this.ensureEmailAvailable(dto.email);
     const email = dto.email.trim().toLowerCase();
     const hashedPassword = await bcrypt.hash(dto.password, 12);
     const user = this.usersRepository.create({
@@ -23,10 +25,30 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
+  async createPublicUser(dto: RegisterDto): Promise<User> {
+    await this.ensureEmailAvailable(dto.email);
+    const email = dto.email.trim().toLowerCase();
+    const hashedPassword = await bcrypt.hash(dto.password, 12);
+    const user = this.usersRepository.create({
+      email,
+      password: hashedPassword,
+      firstName: dto.firstName?.trim() ?? '',
+      lastName: dto.lastName?.trim() ?? '',
+      role: UserRole.CUSTOMER,
+    });
+    return this.usersRepository.save(user);
+  }
+
   async createSocialUser(data: Partial<User>): Promise<User> {
+    if (!data.email) {
+      throw new ConflictException('A social account email is required');
+    }
+
+    await this.ensureEmailAvailable(data.email);
     const user = this.usersRepository.create({
       ...data,
       email: data.email?.trim().toLowerCase(),
+      role: data.role ?? UserRole.CUSTOMER,
     });
     return this.usersRepository.save(user);
   }
@@ -86,6 +108,32 @@ export class UsersService {
         'id', 'email', 'firstName', 'lastName', 'role',
         'isEmailVerified', 'isTotpEnabled', 'createdAt', 'updatedAt',
       ],
+      order: {
+        createdAt: 'DESC',
+      },
     });
+  }
+
+  sanitizeUser(user: User) {
+    const {
+      password,
+      refreshToken,
+      totpSecret,
+      passwordResetToken,
+      passwordResetExpires,
+      passwordResetMethod,
+      passwordResetAttempts,
+      ...safe
+    } = user;
+
+    return safe;
+  }
+
+  private async ensureEmailAvailable(email: string) {
+    const existing = await this.findByEmail(email);
+
+    if (existing) {
+      throw new ConflictException('Email already registered');
+    }
   }
 }
