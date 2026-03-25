@@ -81,6 +81,95 @@ describe('Auth – Role-Based Access Control (e2e)', () => {
     });
   });
 
+  describe('POST /api/users (admin-only creation)', () => {
+    it('should allow admin to create an employee user', async () => {
+      const admin = await registerWithRole(UserRole.ADMIN);
+      const email = uniqueEmail();
+
+      const res = await request(app.getHttpServer())
+        .post('/api/users')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({
+          email,
+          password: DEFAULT_PASSWORD,
+          firstName: 'Employee',
+          lastName: 'Creator',
+          role: UserRole.EMPLOYEE,
+        })
+        .expect(201);
+
+      expect(res.body.email).toBe(email);
+      expect(res.body.role).toBe(UserRole.EMPLOYEE);
+      expect(res.body).not.toHaveProperty('password');
+    });
+
+    it('should allow admin to create another admin user', async () => {
+      const admin = await registerWithRole(UserRole.ADMIN);
+      const email = uniqueEmail();
+
+      const res = await request(app.getHttpServer())
+        .post('/api/users')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({
+          email,
+          password: DEFAULT_PASSWORD,
+          firstName: 'Second',
+          lastName: 'Admin',
+          role: UserRole.ADMIN,
+        })
+        .expect(201);
+
+      expect(res.body.role).toBe(UserRole.ADMIN);
+    });
+
+    it('should deny employee user creation', async () => {
+      const employee = await registerWithRole(UserRole.EMPLOYEE);
+
+      await request(app.getHttpServer())
+        .post('/api/users')
+        .set('Authorization', `Bearer ${employee.accessToken}`)
+        .send({
+          email: uniqueEmail(),
+          password: DEFAULT_PASSWORD,
+          firstName: 'Blocked',
+          lastName: 'Employee',
+          role: UserRole.CUSTOMER,
+        })
+        .expect(403);
+    });
+
+    it('should deny customer user creation', async () => {
+      const customer = await registerWithRole(UserRole.CUSTOMER);
+
+      await request(app.getHttpServer())
+        .post('/api/users')
+        .set('Authorization', `Bearer ${customer.accessToken}`)
+        .send({
+          email: uniqueEmail(),
+          password: DEFAULT_PASSWORD,
+          firstName: 'Blocked',
+          lastName: 'Customer',
+          role: UserRole.CUSTOMER,
+        })
+        .expect(403);
+    });
+
+    it('should require a role for admin-created users', async () => {
+      const admin = await registerWithRole(UserRole.ADMIN);
+
+      await request(app.getHttpServer())
+        .post('/api/users')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({
+          email: uniqueEmail(),
+          password: DEFAULT_PASSWORD,
+          firstName: 'Missing',
+          lastName: 'Role',
+        })
+        .expect(400);
+    });
+  });
+
   // ── Protected profile route – all roles should access ───────────────
 
   describe('GET /api/auth/profile (any authenticated role)', () => {
