@@ -4,8 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { AuthModule } from '../../src/features/auth/auth.module';
+import { InventoryModule } from '../../src/features/inventory/inventory.module';
 import { UsersModule } from '../../src/features/users/users.module';
-import { User } from '../../src/features/users/entities/user.entity';
 
 /**
  * Bootstrap a fully wired NestJS app against the test database.
@@ -17,6 +17,17 @@ export async function createTestApp(): Promise<{
   module: TestingModule;
   dataSource: DataSource;
 }> {
+  process.env.NODE_ENV ??= 'test';
+  process.env.MAIL_TRANSPORT ??= 'memory';
+  process.env.MAIL_FROM ??= 'pharmaflow-test@local.test';
+  process.env.FRONTEND_RESET_PASSWORD_URL ??=
+    'http://localhost:5173/auth/reset-password';
+  process.env.PASSWORD_RESET_MODE ??= 'otp';
+  process.env.PASSWORD_RESET_OTP_LENGTH ??= '6';
+  process.env.PASSWORD_RESET_OTP_TTL_MINUTES ??= '10';
+  process.env.PASSWORD_RESET_OTP_MAX_ATTEMPTS ??= '5';
+  process.env.PASSWORD_RESET_EXPOSE_OTP ??= 'true';
+
   const module = await Test.createTestingModule({
     imports: [
       ConfigModule.forRoot({
@@ -33,12 +44,13 @@ export async function createTestApp(): Promise<{
           username: config.get<string>('DATABASE_USER', 'postgres'),
           password: config.get<string>('DATABASE_PASSWORD', 'postgres'),
           database: config.get<string>('DATABASE_NAME', 'pharmacy_test'),
-          entities: [User],
+          autoLoadEntities: true,
           synchronize: true,
           dropSchema: true, // rebuild schema each test run
         }),
       }),
       AuthModule,
+      InventoryModule,
       UsersModule,
     ],
   }).compile();
@@ -64,11 +76,15 @@ export async function createTestApp(): Promise<{
  * to reset DB state without rebuilding schema.
  */
 export async function cleanDatabase(dataSource: DataSource): Promise<void> {
-  const entities = dataSource.entityMetadatas;
-  for (const entity of entities) {
-    const repo = dataSource.getRepository(entity.name);
-    await repo.query(
-      `TRUNCATE TABLE "${entity.tableName}" RESTART IDENTITY CASCADE`,
-    );
+  const tableNames = dataSource.entityMetadatas.map(
+    (entity) => `"${entity.tableName}"`,
+  );
+
+  if (!tableNames.length) {
+    return;
   }
+
+  await dataSource.query(
+    `TRUNCATE TABLE ${tableNames.join(', ')} RESTART IDENTITY CASCADE`,
+  );
 }
