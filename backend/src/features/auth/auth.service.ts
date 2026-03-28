@@ -1,5 +1,4 @@
 import {
-  ConflictException,
   Injectable,
   BadRequestException,
   UnauthorizedException,
@@ -34,10 +33,7 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
-    const existing = await this.usersService.findByEmail(dto.email);
-    if (existing) throw new ConflictException('Email already registered');
-
-    const user = await this.usersService.create(dto);
+    const user = await this.usersService.createPublicUser(dto);
     const tokens = await this.generateTokens(user);
     await this.usersService.setRefreshToken(user.id, tokens.refreshToken);
     return { user: this.sanitizeUser(user), ...tokens };
