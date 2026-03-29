@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { AuthLayout } from '../components/AuthLayout';
 
@@ -25,21 +25,27 @@ export function SocialCallbackPage() {
 
   if (error) {
     return (
-      <AuthLayout title="Social Login">
+      <AuthLayout
+        title="Social Login"
+        subtitle="We could not finish the provider sign-in flow."
+      >
         <div className="error-message">{error}</div>
-        <a
-          href="/auth/login"
+        <Link
+          to="/auth/login"
           className="btn-primary"
           style={{ display: 'block', textAlign: 'center', textDecoration: 'none', marginTop: '1rem' }}
         >
           Back to Login
-        </a>
+        </Link>
       </AuthLayout>
     );
   }
 
   return (
-    <AuthLayout title="Social Login">
+    <AuthLayout
+      title="Social Login"
+      subtitle="Completing your provider sign-in and loading the workspace."
+    >
       <div className="loading">Completing login…</div>
     </AuthLayout>
   );

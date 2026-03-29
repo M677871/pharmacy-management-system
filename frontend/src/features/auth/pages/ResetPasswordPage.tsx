@@ -46,7 +46,7 @@ export function ResetPasswordPage() {
   const initialState = getInitialResetState(searchParams, resetContext);
   const [mode] = useState<PasswordResetMode>(initialState.mode);
   const [email, setEmail] = useState(initialState.email);
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState(initialState.token);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState(initialState.message);
@@ -108,7 +108,10 @@ export function ResetPasswordPage() {
   const showTokenInput = mode === 'otp' || !hasTokenFromUrl;
 
   return (
-    <AuthLayout title="Reset Password">
+    <AuthLayout
+      title="Choose a New Password"
+      subtitle="Verify the reset request and create a fresh password for your account."
+    >
       <p className="auth-copy">{heading}</p>
 
       {mode === 'otp' && (

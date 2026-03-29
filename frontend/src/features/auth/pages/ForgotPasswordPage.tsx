@@ -46,7 +46,10 @@ export function ForgotPasswordPage() {
   };
 
   return (
-    <AuthLayout title="Forgot Password">
+    <AuthLayout
+      title="Reset Your Password"
+      subtitle="We’ll send either a verification code or a reset link depending on the environment."
+    >
       <p className="auth-copy">
         Enter your email and we&apos;ll send reset instructions. In local
         development, you&apos;ll move straight into the verification-code reset
