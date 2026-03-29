@@ -17,8 +17,9 @@ export function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const result = await login(email, password);
+      const result = await login(email.trim().toLowerCase(), password);
       if (result && 'requiresTwoFactor' in result) {
+        sessionStorage.setItem('totpTempToken', result.tempToken);
         navigate('/auth/totp-verify', {
           state: { tempToken: result.tempToken },
         });
@@ -33,7 +34,10 @@ export function LoginPage() {
   };
 
   return (
-    <AuthLayout title="Sign In">
+    <AuthLayout
+      title="Welcome Back"
+      subtitle="Sign in to manage inventory, sales, purchases, and pharmacy operations."
+    >
       <form onSubmit={handleSubmit}>
         {error && <div className="error-message">{error}</div>}
         <div className="form-group">
