@@ -14,6 +14,7 @@ import {
   StockMovementReferenceType,
   StockMovementType,
 } from '../inventory/inventory.enums';
+import { Product } from '../inventory/products/entities/product.entity';
 import { User, UserRole } from '../users/entities/user.entity';
 
 export interface CatalogProduct {
@@ -158,6 +159,8 @@ export class DashboardService {
       weeklyAnalytics,
       monthlyAnalytics,
       employeeRanking,
+      categoryPerformance,
+      catalogSnapshot,
     ] = await Promise.all([
       this.getReportTotals(rangeDays),
       this.buildSalesTrend(rangeDays),
@@ -169,6 +172,8 @@ export class DashboardService {
       this.buildWeeklyAnalytics(8),
       this.buildMonthlyAnalytics(6),
       this.buildEmployeePerformance(rangeDays),
+      this.buildCategoryPerformance(rangeDays),
+      this.buildCatalogSnapshot(),
     ]);
 
     return {
@@ -184,6 +189,8 @@ export class DashboardService {
       monthlyAnalytics,
       employeeRanking,
       bestEmployee: employeeRanking[0] ?? null,
+      categoryPerformance,
+      catalogSnapshot,
     };
   }
 
@@ -407,44 +414,203 @@ export class DashboardService {
   }
 
   private async buildTopProducts(days: number) {
-    const rows = await this.dataSource
-      .getRepository(SaleItem)
-      .createQueryBuilder('saleItem')
-      .leftJoin('saleItem.sale', 'sale')
-      .leftJoin('saleItem.product', 'product')
-      .select('product.id', 'productId')
-      .addSelect('product.name', 'productName')
-      .addSelect('product.sku', 'sku')
-      .addSelect('COALESCE(SUM(saleItem.quantity), 0)', 'quantity_sold')
-      .addSelect('COALESCE(SUM(saleItem.lineTotal), 0)', 'revenue_total')
-      .where('sale.soldAt >= :fromDate', { fromDate: this.getRangeStart(days) })
-      .groupBy('product.id')
-      .addGroupBy('product.name')
-      .addGroupBy('product.sku')
-      .orderBy('quantity_sold', 'DESC')
-      .addOrderBy('revenue_total', 'DESC')
-      .limit(5)
-      .getRawMany<{
-        productId: string;
-        productName: string;
-        sku: string;
-        quantity_sold: string;
-        revenue_total: string;
-      }>();
+    const fromDate = this.getRangeStart(days);
+    const [rows, profitRows] = await Promise.all([
+      this.dataSource
+        .getRepository(SaleItem)
+        .createQueryBuilder('saleItem')
+        .leftJoin('saleItem.sale', 'sale')
+        .leftJoin('saleItem.product', 'product')
+        .leftJoin('product.category', 'category')
+        .select('product.id', 'productId')
+        .addSelect('product.name', 'productName')
+        .addSelect('product.sku', 'sku')
+        .addSelect('category.name', 'categoryName')
+        .addSelect('COALESCE(SUM(saleItem.quantity), 0)', 'quantity_sold')
+        .addSelect('COALESCE(SUM(saleItem.lineTotal), 0)', 'revenue_total')
+        .where('sale.soldAt >= :fromDate', { fromDate })
+        .groupBy('product.id')
+        .addGroupBy('product.name')
+        .addGroupBy('product.sku')
+        .addGroupBy('category.name')
+        .orderBy('quantity_sold', 'DESC')
+        .addOrderBy('revenue_total', 'DESC')
+        .limit(5)
+        .getRawMany<{
+          productId: string;
+          productName: string;
+          sku: string;
+          categoryName: string | null;
+          quantity_sold: string;
+          revenue_total: string;
+        }>(),
+      this.dataSource
+        .getRepository(SaleItemAllocation)
+        .createQueryBuilder('allocation')
+        .leftJoin('allocation.saleItem', 'saleItem')
+        .leftJoin('saleItem.sale', 'sale')
+        .leftJoin('saleItem.product', 'product')
+        .select('product.id', 'productId')
+        .addSelect(
+          'COALESCE(SUM(allocation.quantity * (saleItem.unitPrice - allocation.unitCost)), 0)',
+          'profit_total',
+        )
+        .where('sale.soldAt >= :fromDate', { fromDate })
+        .groupBy('product.id')
+        .getRawMany<{
+          productId: string;
+          profit_total: string;
+        }>(),
+    ]);
 
     const catalog = await this.getCatalogProducts();
     const quantityByProduct = new Map(
       catalog.map((product) => [product.id, product.availableQuantity]),
     );
+    const profitByProduct = new Map(
+      profitRows.map((row) => [row.productId, Number(row.profit_total)]),
+    );
 
-    return rows.map((row) => ({
-      id: row.productId,
-      productName: row.productName,
-      sku: row.sku,
-      quantitySold: Number(row.quantity_sold),
-      revenue: roundCurrency(Number(row.revenue_total)),
-      availableQuantity: quantityByProduct.get(row.productId) ?? 0,
-    }));
+    return rows.map((row) => {
+      const revenue = roundCurrency(Number(row.revenue_total));
+      const estimatedProfit = roundCurrency(profitByProduct.get(row.productId) ?? 0);
+
+      return {
+        id: row.productId,
+        productName: row.productName,
+        sku: row.sku,
+        categoryName: row.categoryName ?? null,
+        quantitySold: Number(row.quantity_sold),
+        revenue,
+        estimatedProfit,
+        profitMarginPercent: this.roundPercentage(
+          revenue > 0 ? (estimatedProfit / revenue) * 100 : 0,
+        ),
+        availableQuantity: quantityByProduct.get(row.productId) ?? 0,
+      };
+    });
+  }
+
+  private async buildCategoryPerformance(days: number) {
+    const bounds = this.getCurrentRangeBounds(days);
+    const [salesRows, profitRows] = await Promise.all([
+      this.dataSource
+        .getRepository(SaleItem)
+        .createQueryBuilder('saleItem')
+        .leftJoin('saleItem.sale', 'sale')
+        .leftJoin('saleItem.product', 'product')
+        .leftJoin('product.category', 'category')
+        .select(`COALESCE(category.name, 'Uncategorized')`, 'category_name')
+        .addSelect('COALESCE(SUM(saleItem.lineTotal), 0)', 'revenue_total')
+        .addSelect('COALESCE(SUM(saleItem.quantity), 0)', 'quantity_sold')
+        .where('sale.soldAt >= :startDate', { startDate: bounds.start })
+        .andWhere('sale.soldAt < :endDate', { endDate: bounds.end })
+        .groupBy('category.id')
+        .addGroupBy('category.name')
+        .orderBy('revenue_total', 'DESC')
+        .getRawMany<{
+          category_name: string;
+          revenue_total: string;
+          quantity_sold: string;
+        }>(),
+      this.dataSource
+        .getRepository(SaleItemAllocation)
+        .createQueryBuilder('allocation')
+        .leftJoin('allocation.saleItem', 'saleItem')
+        .leftJoin('saleItem.sale', 'sale')
+        .leftJoin('saleItem.product', 'product')
+        .leftJoin('product.category', 'category')
+        .select(`COALESCE(category.name, 'Uncategorized')`, 'category_name')
+        .addSelect(
+          'COALESCE(SUM(allocation.quantity * (saleItem.unitPrice - allocation.unitCost)), 0)',
+          'profit_total',
+        )
+        .where('sale.soldAt >= :startDate', { startDate: bounds.start })
+        .andWhere('sale.soldAt < :endDate', { endDate: bounds.end })
+        .groupBy('category.id')
+        .addGroupBy('category.name')
+        .getRawMany<{
+          category_name: string;
+          profit_total: string;
+        }>(),
+    ]);
+
+    const totalRevenue = salesRows.reduce(
+      (sum, row) => sum + Number(row.revenue_total),
+      0,
+    );
+    const profitByCategory = new Map(
+      profitRows.map((row) => [row.category_name, Number(row.profit_total)]),
+    );
+
+    return salesRows.map((row) => {
+      const revenue = roundCurrency(Number(row.revenue_total));
+      const estimatedProfit = roundCurrency(
+        profitByCategory.get(row.category_name) ?? 0,
+      );
+
+      return {
+        categoryName: row.category_name,
+        revenue,
+        estimatedProfit,
+        quantitySold: Number(row.quantity_sold),
+        sharePercent: this.roundPercentage(
+          totalRevenue > 0 ? (revenue / totalRevenue) * 100 : 0,
+        ),
+      };
+    });
+  }
+
+  private async buildCatalogSnapshot() {
+    const [catalog, recentProducts] = await Promise.all([
+      this.getCatalogProducts(),
+      this.dataSource.getRepository(Product).find({
+        where: {
+          isActive: true,
+        },
+        relations: {
+          category: true,
+          batches: true,
+        },
+        order: {
+          createdAt: 'DESC',
+        },
+        take: 4,
+      }),
+    ]);
+
+    const threshold = this.getLowStockThreshold();
+    const today = toDateOnly(new Date());
+
+    return {
+      totalProducts: catalog.length,
+      inStockProducts: catalog.filter((product) => product.availableQuantity > 0).length,
+      lowStockProducts: catalog.filter(
+        (product) =>
+          product.availableQuantity > 0 && product.availableQuantity <= threshold,
+      ).length,
+      outOfStockProducts: catalog.filter((product) => product.availableQuantity === 0)
+        .length,
+      recentProducts: recentProducts.map((product) => {
+        const activeBatches = product.batches.filter((batch) => batch.quantityOnHand > 0);
+        const sellableBatches = activeBatches.filter(
+          (batch) => batch.expiryDate >= today,
+        );
+
+        return {
+          id: product.id,
+          sku: product.sku,
+          name: product.name,
+          categoryName: product.category?.name ?? null,
+          salePrice: product.salePrice,
+          availableQuantity: sellableBatches.reduce(
+            (sum, batch) => sum + batch.quantityOnHand,
+            0,
+          ),
+          createdAt: product.createdAt.toISOString(),
+        };
+      }),
+    };
   }
 
   private async buildRecentTransactions(limit: number) {
