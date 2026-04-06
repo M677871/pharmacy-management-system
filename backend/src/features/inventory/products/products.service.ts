@@ -6,6 +6,7 @@ import {
 import { QueryFailedError } from 'typeorm';
 import { CategoriesRepository } from '../categories/categories.repository';
 import { roundCurrency, toDateOnly } from '../inventory.utils';
+import { InventoryRealtimeService } from '../realtime/inventory-realtime.service';
 import {
   CreateProductDto,
   ListProductsQueryDto,
@@ -18,6 +19,7 @@ export class ProductsService {
   constructor(
     private readonly productsRepository: ProductsRepository,
     private readonly categoriesRepository: CategoriesRepository,
+    private readonly inventoryRealtimeService: InventoryRealtimeService,
   ) {}
 
   async create(dto: CreateProductDto) {
@@ -39,7 +41,14 @@ export class ProductsService {
       isActive: true,
     });
 
-    return this.productsRepository.save(product);
+    const savedProduct = await this.productsRepository.save(product);
+    await this.inventoryRealtimeService.publishInventoryChange({
+      reason: 'product.created',
+      productIds: [savedProduct.id],
+      relatedEntityId: savedProduct.id,
+    });
+
+    return savedProduct;
   }
 
   async findAll(query: ListProductsQueryDto) {
@@ -151,7 +160,14 @@ export class ProductsService {
       isActive: dto.isActive ?? product.isActive,
     });
 
-    return this.productsRepository.save(product);
+    const savedProduct = await this.productsRepository.save(product);
+    await this.inventoryRealtimeService.publishInventoryChange({
+      reason: 'product.updated',
+      productIds: [savedProduct.id],
+      relatedEntityId: savedProduct.id,
+    });
+
+    return savedProduct;
   }
 
   async remove(id: string) {
@@ -176,6 +192,12 @@ export class ProductsService {
 
       throw error;
     }
+
+    await this.inventoryRealtimeService.publishInventoryChange({
+      reason: 'product.deleted',
+      productIds: [id],
+      relatedEntityId: id,
+    });
 
     return { id };
   }

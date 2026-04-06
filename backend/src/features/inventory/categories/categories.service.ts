@@ -6,10 +6,14 @@ import {
 import { QueryFailedError } from 'typeorm';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
 import { CategoriesRepository } from './categories.repository';
+import { InventoryRealtimeService } from '../realtime/inventory-realtime.service';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly categoriesRepository: CategoriesRepository) {}
+  constructor(
+    private readonly categoriesRepository: CategoriesRepository,
+    private readonly inventoryRealtimeService: InventoryRealtimeService,
+  ) {}
 
   async create(dto: CreateCategoryDto) {
     const name = dto.name.trim();
@@ -24,7 +28,13 @@ export class CategoriesService {
       description: dto.description?.trim() || null,
     });
 
-    return this.categoriesRepository.save(category);
+    const savedCategory = await this.categoriesRepository.save(category);
+    await this.inventoryRealtimeService.publishInventoryChange({
+      reason: 'category.created',
+      relatedEntityId: savedCategory.id,
+    });
+
+    return savedCategory;
   }
 
   findAll() {
@@ -59,7 +69,13 @@ export class CategoriesService {
         dto.description === undefined ? category.description : dto.description?.trim() || null,
     });
 
-    return this.categoriesRepository.save(category);
+    const savedCategory = await this.categoriesRepository.save(category);
+    await this.inventoryRealtimeService.publishInventoryChange({
+      reason: 'category.updated',
+      relatedEntityId: savedCategory.id,
+    });
+
+    return savedCategory;
   }
 
   async remove(id: string) {
@@ -80,6 +96,11 @@ export class CategoriesService {
 
       throw error;
     }
+
+    await this.inventoryRealtimeService.publishInventoryChange({
+      reason: 'category.deleted',
+      relatedEntityId: id,
+    });
 
     return { id };
   }

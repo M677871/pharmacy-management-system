@@ -9,6 +9,7 @@ import { ProductsRepository } from '../products/products.repository';
 import { PurchaseItemsRepository } from '../purchase-items/purchase-items.repository';
 import { StockMovementsRepository } from '../stock-movements/stock-movements.repository';
 import { SuppliersRepository } from '../suppliers/suppliers.repository';
+import { InventoryRealtimeService } from '../realtime/inventory-realtime.service';
 import {
   StockMovementReferenceType,
   StockMovementType,
@@ -32,6 +33,7 @@ export class PurchasesService {
     private readonly purchaseItemsRepository: PurchaseItemsRepository,
     private readonly batchesRepository: BatchesRepository,
     private readonly stockMovementsRepository: StockMovementsRepository,
+    private readonly inventoryRealtimeService: InventoryRealtimeService,
   ) {}
 
   create(dto: ReceivePurchaseDto, userId: string) {
@@ -106,7 +108,13 @@ export class PurchasesService {
   }
 
   async receiveStock(dto: ReceivePurchaseDto, userId: string) {
-    return this.dataSource.transaction(async (manager) => {
+    const productIds = [...new Set(dto.items.map((item) => item.productId))];
+    const [previousProductStates, previousBatchStates] = await Promise.all([
+      this.inventoryRealtimeService.captureProductStates(productIds),
+      this.inventoryRealtimeService.captureBatchStatesForProducts(productIds),
+    ]);
+
+    const receipt = await this.dataSource.transaction(async (manager) => {
       const supplier = await this.suppliersRepository.findById(dto.supplierId);
 
       if (!supplier) {
@@ -114,7 +122,6 @@ export class PurchasesService {
       }
 
       const receivedAt = normalizeDate(dto.receivedAt);
-      const productIds = [...new Set(dto.items.map((item) => item.productId))];
       const products = productIds.length
         ? await this.productsRepository.findByIds(productIds, manager)
         : [];
@@ -235,5 +242,22 @@ export class PurchasesService {
         items: responseItems,
       };
     });
+
+    await this.inventoryRealtimeService.publishInventoryChange({
+      reason: 'purchase.received',
+      productIds,
+      batchIds: receipt.items
+        .map((item) => {
+          const batchId = item.batchId;
+          return typeof batchId === 'string' ? batchId : '';
+        })
+        .filter(Boolean),
+      relatedEntityId: receipt.id,
+      actorUserId: userId,
+      previousProductStates,
+      previousBatchStates,
+    });
+
+    return receipt;
   }
 }

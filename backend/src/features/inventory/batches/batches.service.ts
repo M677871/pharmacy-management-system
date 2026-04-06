@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ProductsRepository } from '../products/products.repository';
+import { InventoryRealtimeService } from '../realtime/inventory-realtime.service';
 import { toDateOnly } from '../inventory.utils';
 import {
   CreateBatchDto,
@@ -17,6 +18,7 @@ export class BatchesService {
   constructor(
     private readonly batchesRepository: BatchesRepository,
     private readonly productsRepository: ProductsRepository,
+    private readonly inventoryRealtimeService: InventoryRealtimeService,
   ) {}
 
   async findAll(query: ListBatchesQueryDto) {
@@ -107,7 +109,15 @@ export class BatchesService {
       notes: dto.notes === undefined ? batch.notes : dto.notes?.trim() || null,
     });
 
-    return this.batchesRepository.save(batch);
+    const savedBatch = await this.batchesRepository.save(batch);
+    await this.inventoryRealtimeService.publishInventoryChange({
+      reason: 'batch.updated',
+      productIds: [savedBatch.productId],
+      batchIds: [savedBatch.id],
+      relatedEntityId: savedBatch.id,
+    });
+
+    return savedBatch;
   }
 
   remove(_id: string) {
