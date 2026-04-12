@@ -12,6 +12,7 @@ import { PurchasesPage } from './features/purchases/pages/PurchasesPage';
 import { ReportsPage } from './features/reports/pages/ReportsPage';
 import { SettingsPage } from './features/settings/pages/SettingsPage';
 import { CatalogPage } from './features/catalog/pages/CatalogPage';
+import { MessagesPage } from './features/messaging/pages/MessagesPage';
 import { ProtectedRoute } from './shared/components/ProtectedRoute';
 import { useAuth } from './features/auth/hooks/useAuth';
 
@@ -108,6 +109,14 @@ function App() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/messages"
+        element={
+          <ProtectedRoute>
+            <MessagesPage />
           </ProtectedRoute>
         }
       />
