@@ -94,6 +94,8 @@ export class ChatService {
           contact: this.toUserSummary(contact),
           lastMessage: this.toMessagePayload(message),
           unreadCount: unreadByContactId.get(contact.id) ?? 0,
+          isClosed: false,
+          closedAt: null,
         });
       }
     }
