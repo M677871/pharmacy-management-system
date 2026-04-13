@@ -105,25 +105,17 @@ export function MessagesSidebar({
 
   return (
     <aside className="messages-sidebar-shell">
-      <div className="messages-sidebar-topbar">
-        <div>
-          <span className="messages-sidebar-eyebrow">Collaboration</span>
-          <h2>Direct messages</h2>
-        </div>
-        <div className={`messages-live-indicator${connectionReady ? '' : ' offline'}`}>
-          <span className="messages-live-indicator-dot" aria-hidden="true" />
-          {connectionReady ? 'Live' : 'Offline'}
-        </div>
-      </div>
-
-      <div className="messages-sidebar-overview">
-        <div>
-          <strong>{conversationItems.length}</strong>
-          <span>People</span>
-        </div>
-        <div>
-          <strong>{unreadThreadsCount}</strong>
-          <span>Unread</span>
+      <div className="messages-sidebar-headline">
+        <h2>Messages</h2>
+        <div className="messages-sidebar-counters">
+          <span className="messages-counter-pill" title="Total People">
+            👥 {conversationItems.length}
+          </span>
+          {unreadThreadsCount > 0 && (
+            <span className="messages-counter-pill unread" title="Unread Messages">
+              🔔 {unreadThreadsCount}
+            </span>
+          )}
         </div>
       </div>
 

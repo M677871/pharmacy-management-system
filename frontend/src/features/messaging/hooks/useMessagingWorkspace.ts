@@ -72,14 +72,27 @@ export function useMessagingWorkspace() {
   }, [selectedContactId]);
 
   const conversationItems = useMemo(
-    () =>
-      buildConversationItems({
+    () => {
+      const items = buildConversationItems({
         contacts,
         currentUserId: user?.id,
         presenceByUserId,
         threadSummaries,
-      }),
-    [contacts, presenceByUserId, threadSummaries, user?.id],
+      });
+
+      if (!deferredSearch.trim()) {
+        return items;
+      }
+
+      const lowerSearch = deferredSearch.toLowerCase().trim();
+      return items.filter(
+        (item) =>
+          item.contact.displayName.toLowerCase().includes(lowerSearch) ||
+          item.contact.email.toLowerCase().includes(lowerSearch) ||
+          (item.preview?.toLowerCase() ?? '').includes(lowerSearch)
+      );
+    },
+    [contacts, presenceByUserId, threadSummaries, user?.id, deferredSearch],
   );
 
   const availabilityItems = useMemo(

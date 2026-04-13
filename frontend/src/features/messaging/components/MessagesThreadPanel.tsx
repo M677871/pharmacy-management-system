@@ -125,38 +125,17 @@ export function MessagesThreadPanel({
 
   return (
     <article className="messages-thread-shell">
-      <header className="messages-thread-topbar">
-        <div className="messages-thread-profile">
-          <div className="messages-thread-avatar">
+      <header className="messages-thread-header-minimal">
+        <div className="messages-thread-header-profile">
+          <div className="messages-thread-avatar-tiny">
             {selectedContact.displayName.charAt(0).toUpperCase()}
           </div>
-          <div>
-            <span className="surface-card-eyebrow">Direct message</span>
+          <div className="messages-thread-header-info">
             <h2>{selectedContact.displayName}</h2>
-            <div className="messages-thread-profile-meta">
+            <div className="messages-thread-header-status">
               <MessagePresenceBadge entry={selectedPresence} compact />
-              <span>{formatRole(selectedContact.role)}</span>
-              <span>{selectedContact.email}</span>
+              <span className="messages-thread-header-role">{formatRole(selectedContact.role)}</span>
             </div>
-          </div>
-        </div>
-
-        <div className="messages-thread-overview">
-          <div>
-            <span>Thread state</span>
-            <strong>{connectionReady ? 'Live' : 'Waiting for reconnect'}</strong>
-          </div>
-          <div>
-            <span>Last outgoing</span>
-            <strong>{threadReadSummary ?? 'No sent messages yet'}</strong>
-          </div>
-          <div>
-            <span>Messages</span>
-            <strong>{messageClusters.reduce((sum, cluster) => sum + cluster.messages.length, 0)}</strong>
-          </div>
-          <div>
-            <span>Unread</span>
-            <strong>{selectedConversation?.unreadCount ?? 0}</strong>
           </div>
         </div>
       </header>
@@ -276,7 +255,7 @@ export function MessagesThreadPanel({
 
           <textarea
             ref={composerRef}
-            rows={2}
+            rows={1}
             className="messages-composer-input"
             placeholder={
               isEditingMessage

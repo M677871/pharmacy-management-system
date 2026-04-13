@@ -121,6 +121,7 @@ export function MessagesPage() {
             selectedConversation={selectedConversation}
             selectedPresence={selectedPresence}
             sendingBroadcast={sendingBroadcast}
+            threadMessageCount={messageClusters.reduce((sum, cluster) => sum + cluster.messages.length, 0)}
             threadReadSummary={threadReadSummary}
             onBroadcastAudienceChange={setBroadcastAudience}
             onBroadcastBodyChange={setBroadcastBody}

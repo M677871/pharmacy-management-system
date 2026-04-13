@@ -46,6 +46,8 @@ export class ChatService {
           user.firstName ILIKE :search
           OR user.lastName ILIKE :search
           OR user.email ILIKE :search
+          OR CONCAT(user.firstName, ' ', user.lastName) ILIKE :search
+          OR CONCAT(user.lastName, ' ', user.firstName) ILIKE :search
         )`,
         { search: `%${search.trim()}%` },
       );

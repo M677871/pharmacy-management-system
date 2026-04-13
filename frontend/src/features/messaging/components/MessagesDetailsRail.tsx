@@ -21,6 +21,7 @@ interface MessagesDetailsRailProps {
   selectedConversation: ConversationItem | null;
   selectedPresence?: PresenceEntry;
   sendingBroadcast: boolean;
+  threadMessageCount: number;
   threadReadSummary: string | null;
   onBroadcastAudienceChange: (value: BroadcastAudience) => void;
   onBroadcastBodyChange: (value: string) => void;
@@ -86,6 +87,7 @@ export function MessagesDetailsRail({
   selectedConversation,
   selectedPresence,
   sendingBroadcast,
+  threadMessageCount,
   threadReadSummary,
   onBroadcastAudienceChange,
   onBroadcastBodyChange,
@@ -135,6 +137,10 @@ export function MessagesDetailsRail({
               <div>
                 <span>Unread</span>
                 <strong>{selectedConversation?.unreadCount ?? 0}</strong>
+              </div>
+              <div>
+                <span>Messages</span>
+                <strong>{threadMessageCount}</strong>
               </div>
               <div>
                 <span>Outgoing state</span>
