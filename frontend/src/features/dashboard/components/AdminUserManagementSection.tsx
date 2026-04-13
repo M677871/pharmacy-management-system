@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { usersService } from '../../users/services/users.service';
+import { useRealtime } from '../../realtime/hooks/useRealtime';
+import { useRealtimeEvent } from '../../realtime/hooks/useRealtimeEvent';
+import { realtimeEvent } from '../../realtime/types/realtime.types';
 import type {
   CreateManagedUserPayload,
   ManagedUser,
@@ -25,6 +28,7 @@ const INITIAL_FORM: CreateManagedUserPayload = {
 };
 
 export function AdminUserManagementSection() {
+  const { presenceByUserId } = useRealtime();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -33,17 +37,20 @@ export function AdminUserManagementSection() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [form, setForm] = useState<CreateManagedUserPayload>(INITIAL_FORM);
 
+  async function loadUsers() {
+    const data = await usersService.listUsers();
+    setUsers(data);
+    return data;
+  }
+
   useEffect(() => {
     let active = true;
 
-    void usersService
-      .listUsers()
+    void loadUsers()
       .then((data) => {
         if (!active) {
           return;
         }
-
-        setUsers(data);
       })
       .catch((loadError) => {
         if (!active) {
@@ -64,6 +71,12 @@ export function AdminUserManagementSection() {
       active = false;
     };
   }, []);
+
+  useRealtimeEvent(realtimeEvent.usersChanged, () => {
+    void loadUsers().catch(() => {
+      return;
+    });
+  });
 
   const userCounts = useMemo(() => {
     return users.reduce(
@@ -281,6 +294,13 @@ export function AdminUserManagementSection() {
                       <span className="table-subcopy">
                         {user.isEmailVerified ? 'Verified' : 'Pending verification'}
                       </span>
+                      <div
+                        className={`presence-inline presence-inline-${
+                          presenceByUserId[user.id]?.status ?? 'offline'
+                        }`}
+                      >
+                        {presenceByUserId[user.id]?.status ?? 'offline'}
+                      </div>
                     </td>
                     <td>{formatDate(user.createdAt)}</td>
                   </tr>

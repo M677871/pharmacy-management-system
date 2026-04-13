@@ -37,8 +37,11 @@ export interface TopProduct {
   id: string;
   productName: string;
   sku: string;
+  categoryName: string | null;
   quantitySold: number;
   revenue: number;
+  estimatedProfit: number;
+  profitMarginPercent: number;
   availableQuantity: number;
 }
 
@@ -154,6 +157,28 @@ export interface DashboardReports {
     profitMarginPercent: number;
   } | null;
   topProducts: TopProduct[];
+  categoryPerformance: Array<{
+    categoryName: string;
+    revenue: number;
+    estimatedProfit: number;
+    quantitySold: number;
+    sharePercent: number;
+  }>;
+  catalogSnapshot: {
+    totalProducts: number;
+    inStockProducts: number;
+    lowStockProducts: number;
+    outOfStockProducts: number;
+    recentProducts: Array<{
+      id: string;
+      sku: string;
+      name: string;
+      categoryName: string | null;
+      salePrice: number;
+      availableQuantity: number;
+      createdAt: string;
+    }>;
+  };
   recentTransactions: RecentTransaction[];
   movementSummary: {
     purchasesIn: number;

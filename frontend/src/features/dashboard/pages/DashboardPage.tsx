@@ -4,6 +4,7 @@ import { MetricCard } from '../../../shared/components/MetricCard';
 import { TrendLineChart } from '../../../shared/components/charts/TrendLineChart';
 import { HorizontalBarChart } from '../../../shared/components/charts/HorizontalBarChart';
 import { useAuth } from '../../auth/hooks/useAuth';
+import { useAnalyticsAutoRefresh } from '../../realtime/hooks/useAnalyticsAutoRefresh';
 import { dashboardService } from '../services/dashboard.service';
 import type { DashboardOverview } from '../types/dashboard.types';
 import {
@@ -22,6 +23,29 @@ export function DashboardPage() {
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const dashboardScopes =
+    user?.role === 'admin'
+      ? (['inventory', 'catalog', 'purchases', 'sales', 'returns', 'users'] as const)
+      : (['inventory', 'catalog', 'purchases', 'sales', 'returns'] as const);
+
+  async function loadOverview(nextRangeDays = rangeDays) {
+    setError('');
+    const data = await dashboardService.getOverview(nextRangeDays);
+    setOverview(data);
+    return data;
+  }
+
+  const { markRefreshed } = useAnalyticsAutoRefresh({
+    scopes: [...dashboardScopes],
+    enabled: Boolean(user),
+    onRefresh: async () => {
+      if (!user) {
+        return;
+      }
+
+      await loadOverview(rangeDays);
+    },
+  });
 
   useEffect(() => {
     let active = true;
@@ -29,14 +53,13 @@ export function DashboardPage() {
     setLoading(true);
     setError('');
 
-    void dashboardService
-      .getOverview(rangeDays)
-      .then((data) => {
+    void loadOverview(rangeDays)
+      .then(() => {
         if (!active) {
           return;
         }
 
-        setOverview(data);
+        markRefreshed();
       })
       .catch((loadError) => {
         if (!active) {
@@ -56,7 +79,7 @@ export function DashboardPage() {
     return () => {
       active = false;
     };
-  }, [rangeDays]);
+  }, [markRefreshed, rangeDays]);
 
   if (!user) {
     return null;

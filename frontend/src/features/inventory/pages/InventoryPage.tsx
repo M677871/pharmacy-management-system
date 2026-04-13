@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { AppShell } from '../../../shared/components/AppShell';
+import { useRealtimeEvent } from '../../realtime/hooks/useRealtimeEvent';
+import { realtimeEvent } from '../../realtime/types/realtime.types';
 import { inventoryService } from '../services/inventory.service';
 import type {
   Category,
@@ -98,6 +100,12 @@ export function InventoryPage() {
 
     return () => window.clearTimeout(timeoutId);
   }, [searchTerm]);
+
+  useRealtimeEvent(realtimeEvent.inventoryChanged, () => {
+    void loadData(searchTerm, selectedProductId).catch(() => {
+      return;
+    });
+  });
 
   async function inspectProduct(product: ProductSummary) {
     setSelectedProductId(product.id);
