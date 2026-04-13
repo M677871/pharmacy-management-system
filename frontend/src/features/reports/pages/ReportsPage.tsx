@@ -40,6 +40,7 @@ const REFRESH_REASON_LABEL: Record<AnalyticsRefreshEvent['reason'], string> = {
   'product.created': 'A product was added',
   'product.updated': 'A product was updated',
   'product.deleted': 'A product was removed',
+  'order.approved': 'An order reserved stock',
   'batch.updated': 'A batch was updated',
   'category.created': 'A category was added',
   'category.updated': 'A category was updated',

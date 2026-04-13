@@ -13,6 +13,7 @@ import { ReportsPage } from './features/reports/pages/ReportsPage';
 import { SettingsPage } from './features/settings/pages/SettingsPage';
 import { CatalogPage } from './features/catalog/pages/CatalogPage';
 import { MessagesPage } from './features/messaging/pages/MessagesPage';
+import { OrdersPage } from './features/orders/pages/OrdersPage';
 import { ProtectedRoute } from './shared/components/ProtectedRoute';
 import { useAuth } from './features/auth/hooks/useAuth';
 
@@ -157,6 +158,14 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={['customer']}>
             <CatalogPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/orders"
+        element={
+          <ProtectedRoute>
+            <OrdersPage />
           </ProtectedRoute>
         }
       />

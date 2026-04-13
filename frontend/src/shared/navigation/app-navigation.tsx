@@ -3,6 +3,7 @@ import type { User } from '../../features/auth/types/auth.types';
 import {
   CatalogIcon,
   DashboardIcon,
+  DeliveryIcon,
   InventoryIcon,
   MessageIcon,
   PurchasesIcon,
@@ -60,6 +61,12 @@ const navigationItems: NavigationItem[] = [
     to: '/catalog',
     icon: <CatalogIcon className="nav-icon" />,
     roles: ['customer'],
+  },
+  {
+    label: 'Orders',
+    to: '/orders',
+    icon: <DeliveryIcon className="nav-icon" />,
+    roles: ['admin', 'employee', 'customer'],
   },
   {
     label: 'Settings',

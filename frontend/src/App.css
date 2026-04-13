@@ -1160,6 +1160,241 @@ a {
   gap: 0.5rem;
 }
 
+.catalog-order-grid,
+.orders-page-grid {
+  align-items: start;
+}
+
+.catalog-order-side-card,
+.orders-side-card {
+  position: sticky;
+  top: 1rem;
+}
+
+.catalog-card.unavailable {
+  background: linear-gradient(180deg, rgba(108, 127, 153, 0.08), rgba(255, 255, 255, 0.94));
+}
+
+.catalog-card-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.catalog-card-actions .workspace-primary-action {
+  flex: 1;
+}
+
+.catalog-quantity-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem;
+  border-radius: 999px;
+  background: rgba(27, 102, 209, 0.08);
+  color: var(--primary-ink);
+  min-width: 7.25rem;
+  justify-content: space-between;
+}
+
+.catalog-stepper-button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid rgba(27, 102, 209, 0.12);
+  color: var(--primary-ink);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.catalog-stepper-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.orders-draft-list,
+.orders-list,
+.orders-driver-list,
+.orders-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.order-draft-row,
+.catalog-order-activity-card,
+.order-card,
+.order-driver-row,
+.order-checklist-step {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface-alt);
+}
+
+.order-draft-row,
+.order-driver-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.9rem;
+  align-items: center;
+  padding: 0.95rem 1rem;
+}
+
+.order-draft-row span,
+.catalog-order-activity-card span,
+.order-card span,
+.order-driver-row span,
+.order-checklist-step span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  margin-top: 0.2rem;
+  display: block;
+}
+
+.order-draft-row-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+}
+
+.order-draft-row-actions .workspace-secondary-action,
+.order-driver-row .workspace-secondary-action,
+.order-payment-banner .workspace-primary-action {
+  width: auto;
+}
+
+.order-draft-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(27, 102, 209, 0.08), rgba(36, 177, 160, 0.1));
+  color: var(--primary-ink);
+  margin-block: 1rem;
+}
+
+.catalog-order-activity-card {
+  padding: 0.95rem 1rem;
+}
+
+.catalog-order-activity-top,
+.order-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.order-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.38rem 0.72rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 0.55rem;
+}
+
+.order-status-badge.tone-blue {
+  background: rgba(27, 102, 209, 0.14);
+  color: var(--primary);
+}
+
+.order-status-badge.tone-orange {
+  background: rgba(242, 153, 74, 0.18);
+  color: #aa6419;
+}
+
+.order-status-badge.tone-green {
+  background: rgba(50, 179, 107, 0.18);
+  color: #1f7b47;
+}
+
+.order-status-badge.tone-red {
+  background: rgba(234, 90, 99, 0.16);
+  color: #b5353d;
+}
+
+.order-status-badge.tone-teal {
+  background: rgba(36, 177, 160, 0.16);
+  color: #157f71;
+}
+
+.order-card {
+  padding: 1.05rem 1.1rem;
+  background: linear-gradient(180deg, rgba(27, 102, 209, 0.04), rgba(255, 255, 255, 0.96));
+}
+
+.order-card-total {
+  text-align: right;
+}
+
+.order-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.order-item-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.order-item-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 0.82rem 0.9rem;
+  border-radius: 16px;
+  background: rgba(244, 248, 252, 0.88);
+  border: 1px solid rgba(217, 226, 240, 0.88);
+}
+
+.order-note-card,
+.order-action-card {
+  margin-top: 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(217, 226, 240, 0.88);
+  background: #fff;
+  padding: 0.95rem 1rem;
+}
+
+.order-note-card p,
+.order-checklist-step {
+  margin-top: 0.45rem;
+}
+
+.order-note-card-rejected {
+  background: rgba(255, 231, 234, 0.56);
+}
+
+.order-note-card-success {
+  background: rgba(230, 247, 238, 0.7);
+}
+
+.order-payment-banner {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.order-checklist-step {
+  padding: 0.95rem 1rem;
+}
+
 .product-card-footer {
   display: flex;
   justify-content: space-between;
@@ -3159,6 +3394,11 @@ a {
     grid-column: auto;
   }
 
+  .catalog-order-side-card,
+  .orders-side-card {
+    position: static;
+  }
+
   .auth-screen {
     grid-template-columns: 1fr;
   }
@@ -3195,7 +3435,8 @@ a {
 
   .workspace-form-grid,
   .summary-grid,
-  .detail-grid {
+  .detail-grid,
+  .order-meta-grid {
     grid-template-columns: 1fr;
   }
 
@@ -3224,6 +3465,8 @@ a {
   .reports-toolbar,
   .reports-toolbar-copy,
   .reports-toolbar-controls,
+  .catalog-card-actions,
+  .order-payment-banner,
   .messages-sidebar-topbar,
   .messages-conversation-top,
   .messages-conversation-meta,
@@ -3953,4 +4196,3 @@ a {
   background: rgba(255,255,255,0.08) !important;
   color: rgba(255,255,255,0.8) !important;
 }
-

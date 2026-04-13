@@ -202,3 +202,14 @@ export function ClipboardIcon(props: IconProps) {
     </IconBase>
   );
 }
+
+export function DeliveryIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M3 8h11v8H3z" />
+      <path d="M14 10h3l3 3v3h-6z" />
+      <circle cx="7" cy="18" r="2" />
+      <circle cx="17" cy="18" r="2" />
+    </IconBase>
+  );
+}

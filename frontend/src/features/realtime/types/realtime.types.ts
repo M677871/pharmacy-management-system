@@ -15,6 +15,8 @@ export const realtimeEvent = {
   chatMessageDeleted: 'chat.message.deleted',
   chatThreadRead: 'chat.thread.read',
   broadcastCreated: 'broadcast.created',
+  orderCreated: 'order.created',
+  orderUpdated: 'order.updated',
 } as const;
 
 export const realtimeClientEvent = {
@@ -35,6 +37,7 @@ export type NotificationType =
   | 'out_of_stock'
   | 'expiry_warning'
   | 'broadcast'
+  | 'order'
   | 'system';
 export type NotificationSeverity = 'info' | 'warning' | 'critical' | 'success';
 
@@ -119,10 +122,73 @@ export interface BroadcastMessage {
   createdAt: string;
 }
 
+export type OrderStatus =
+  | 'pending_assignment'
+  | 'pending_review'
+  | 'approved'
+  | 'rejected'
+  | 'completed';
+
+export interface DeliveryDriver {
+  id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  vehicleDescription: string | null;
+  notes: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrderItemAllocation {
+  id: string;
+  batchId: string;
+  batchNumber: string;
+  expiryDate: string;
+  quantity: number;
+}
+
+export interface OrderItem {
+  id: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  unit: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  allocations: OrderItemAllocation[];
+}
+
+export interface OrderRecord {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  notes: string | null;
+  approvalMessage: string | null;
+  rejectionReason: string | null;
+  paymentMethod: 'cash' | null;
+  totalAmount: number;
+  saleId: string | null;
+  itemCount: number;
+  client: RealtimeUserSummary;
+  assignedEmployee: RealtimeUserSummary | null;
+  deliveryDriver: DeliveryDriver | null;
+  items: OrderItem[];
+  createdAt: string;
+  assignedAt: string | null;
+  reviewedAt: string | null;
+  locationSharedAt: string | null;
+  paidAt: string | null;
+  updatedAt: string;
+}
+
 export type InventoryChangeReason =
   | 'product.created'
   | 'product.updated'
   | 'product.deleted'
+  | 'order.approved'
   | 'batch.updated'
   | 'category.created'
   | 'category.updated'
@@ -169,6 +235,8 @@ export interface RealtimeEventMap {
   [realtimeEvent.chatMessageDeleted]: DirectMessage;
   [realtimeEvent.chatThreadRead]: ChatThreadReadPayload;
   [realtimeEvent.broadcastCreated]: BroadcastMessage;
+  [realtimeEvent.orderCreated]: OrderRecord;
+  [realtimeEvent.orderUpdated]: OrderRecord;
 }
 
 export interface RealtimeToast {

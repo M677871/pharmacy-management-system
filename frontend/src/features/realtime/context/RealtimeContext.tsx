@@ -22,6 +22,7 @@ import {
   type DirectMessage,
   type NotificationItem,
   type NotificationsReadAllPayload,
+  type OrderRecord,
   type PresenceEntry,
   type RealtimeEventMap,
   type RealtimeToast,
@@ -474,6 +475,12 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     });
     socket.on(realtimeEvent.usersChanged, (payload) => {
       emitLocal(realtimeEvent.usersChanged, payload);
+    });
+    socket.on(realtimeEvent.orderCreated, (payload: OrderRecord) => {
+      emitLocal(realtimeEvent.orderCreated, payload);
+    });
+    socket.on(realtimeEvent.orderUpdated, (payload: OrderRecord) => {
+      emitLocal(realtimeEvent.orderUpdated, payload);
     });
 
     socket.connect();
