@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { RealtimeEmitterService } from '../realtime/core/realtime-emitter.service';
 import { RealtimeServerEvent } from '../realtime/realtime.events';
 import {
@@ -138,34 +138,33 @@ export class ChatService {
       sender,
       dto.recipientId,
     );
-    const body = dto.body.trim();
+    return this.createAndDispatchMessage(sender, recipient, dto.body);
+  }
 
-    if (!body) {
-      throw new BadRequestException('Message body is required.');
+  async sendAutomatedDirectMessage(
+    senderId: string,
+    recipientId: string,
+    body: string,
+  ) {
+    const users = await this.usersRepository.find({
+      where: {
+        id: In([senderId, recipientId]),
+      },
+    });
+    const sender = users.find((user) => user.id === senderId);
+    const recipient = users.find((user) => user.id === recipientId);
+
+    if (!sender || !recipient) {
+      throw new NotFoundException('Automated message participants were not found.');
     }
 
-    const message = await this.messagesRepository.save(
-      this.messagesRepository.create({
-        senderId: sender.id,
-        recipientId: recipient.id,
-        body,
-        readAt: null,
-      }),
-    );
+    if (!this.isAllowedContactRole(sender.role, recipient.role)) {
+      throw new ForbiddenException(
+        'Automated message participants are not allowed to message each other.',
+      );
+    }
 
-    const payload = this.toMessagePayload({
-      ...message,
-      sender,
-      recipient,
-    } as ChatMessage);
-
-    this.emitter.emitToUsers(
-      [sender.id, recipient.id],
-      RealtimeServerEvent.CHAT_MESSAGE_CREATED,
-      payload,
-    );
-
-    return payload;
+    return this.createAndDispatchMessage(sender, recipient, body);
   }
 
   async updateDirectMessage(sender: User, dto: UpdateDirectMessageDto) {
@@ -330,5 +329,40 @@ export class ChatService {
       sender: this.toUserSummary(message.sender),
       recipient: this.toUserSummary(message.recipient),
     };
+  }
+
+  private async createAndDispatchMessage(
+    sender: User,
+    recipient: User,
+    rawBody: string,
+  ) {
+    const body = rawBody.trim();
+
+    if (!body) {
+      throw new BadRequestException('Message body is required.');
+    }
+
+    const message = await this.messagesRepository.save(
+      this.messagesRepository.create({
+        senderId: sender.id,
+        recipientId: recipient.id,
+        body,
+        readAt: null,
+      }),
+    );
+
+    const payload = this.toMessagePayload({
+      ...message,
+      sender,
+      recipient,
+    } as ChatMessage);
+
+    this.emitter.emitToUsers(
+      [sender.id, recipient.id],
+      RealtimeServerEvent.CHAT_MESSAGE_CREATED,
+      payload,
+    );
+
+    return payload;
   }
 }

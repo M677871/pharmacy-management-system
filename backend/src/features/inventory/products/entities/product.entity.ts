@@ -19,22 +19,22 @@ import { StockMovement } from '../../stock-movements/entities/stock-movement.ent
 @Entity('products')
 export class Product {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'varchar', unique: true })
-  sku: string;
+  sku!: string;
 
   @Column({ type: 'varchar' })
-  name: string;
+  name!: string;
 
   @Column({ type: 'varchar', nullable: true, unique: true })
-  barcode: string | null;
+  barcode!: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  description: string | null;
+  description!: string | null;
 
   @Column({ type: 'varchar', default: 'unit' })
-  unit: string;
+  unit!: string;
 
   @Column({
     type: 'numeric',
@@ -42,39 +42,39 @@ export class Product {
     scale: 2,
     transformer: decimalTransformer,
   })
-  salePrice: number;
+  salePrice!: number;
 
   @Column({ type: 'boolean', default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @Column({ type: 'uuid', nullable: true })
-  categoryId: string | null;
+  categoryId!: string | null;
 
   @ManyToOne(() => Category, (category) => category.products, {
     nullable: true,
     onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'categoryId' })
-  category: Category | null;
+  category!: Category | null;
 
   @OneToMany(() => Batch, (batch) => batch.product)
-  batches: Batch[];
+  batches!: Batch[];
 
   @OneToMany(() => PurchaseItem, (purchaseItem) => purchaseItem.product)
-  purchaseItems: PurchaseItem[];
+  purchaseItems!: PurchaseItem[];
 
   @OneToMany(() => SaleItem, (saleItem) => saleItem.product)
-  saleItems: SaleItem[];
+  saleItems!: SaleItem[];
 
   @OneToMany(() => ReturnItem, (returnItem) => returnItem.product)
-  returnItems: ReturnItem[];
+  returnItems!: ReturnItem[];
 
   @OneToMany(() => StockMovement, (movement) => movement.product)
-  stockMovements: StockMovement[];
+  stockMovements!: StockMovement[];
 
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

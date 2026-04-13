@@ -10,11 +10,11 @@ import { UserRole } from '../../users/entities/user.entity';
 export class SendBroadcastDto {
   @IsString()
   @MaxLength(160)
-  title: string;
+  title!: string;
 
   @IsString()
   @MaxLength(3000)
-  body: string;
+  body!: string;
 
   @IsOptional()
   @IsArray()

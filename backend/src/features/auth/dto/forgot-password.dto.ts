@@ -6,5 +6,5 @@ export class ForgotPasswordDto {
     typeof value === 'string' ? value.trim().toLowerCase() : value,
   )
   @IsEmail()
-  email: string;
+  email!: string;
 }

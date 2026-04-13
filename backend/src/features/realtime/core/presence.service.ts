@@ -101,6 +101,18 @@ export class PresenceService implements OnModuleInit, OnModuleDestroy {
     return (this.socketIdsByUserId.get(userId)?.size ?? 0) > 0;
   }
 
+  getOnlineUserIdsByRole(role: UserRole) {
+    const userIds = new Set<string>();
+
+    for (const connection of this.connectionsBySocketId.values()) {
+      if (connection.user.role === role) {
+        userIds.add(connection.user.id);
+      }
+    }
+
+    return [...userIds];
+  }
+
   getVisiblePresenceSnapshot(viewer: User) {
     return [...this.socketIdsByUserId.keys()]
       .map((userId) => this.buildPresenceEntry(userId))

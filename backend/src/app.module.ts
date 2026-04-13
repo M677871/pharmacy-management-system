@@ -7,6 +7,7 @@ import { InventoryModule } from './features/inventory/inventory.module';
 import { RealtimeModule } from './features/realtime/realtime.module';
 import { UsersModule } from './features/users/users.module';
 import { MessagingModule } from './features/messaging/messaging.module';
+import { OrdersModule } from './features/orders/orders.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { MessagingModule } from './features/messaging/messaging.module';
     AuthModule,
     DashboardModule,
     InventoryModule,
+    OrdersModule,
     RealtimeModule,
     MessagingModule,
     UsersModule,

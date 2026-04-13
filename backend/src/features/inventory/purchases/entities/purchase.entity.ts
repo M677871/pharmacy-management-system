@@ -17,32 +17,32 @@ import { Supplier } from '../../suppliers/entities/supplier.entity';
 @Entity('purchases')
 export class Purchase {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid' })
-  supplierId: string;
+  supplierId!: string;
 
   @ManyToOne(() => Supplier, (supplier) => supplier.purchases, {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'supplierId' })
-  supplier: Supplier;
+  supplier!: Supplier;
 
   @Column({ type: 'uuid' })
-  receivedById: string;
+  receivedById!: string;
 
   @ManyToOne(() => User, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'receivedById' })
-  receivedBy: User;
+  receivedBy!: User;
 
   @Column({ type: 'varchar', nullable: true })
-  invoiceNumber: string | null;
+  invoiceNumber!: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  notes: string | null;
+  notes!: string | null;
 
   @Column({ type: 'timestamptz' })
-  receivedAt: Date;
+  receivedAt!: Date;
 
   @Column({
     type: 'numeric',
@@ -51,17 +51,17 @@ export class Purchase {
     default: 0,
     transformer: decimalTransformer,
   })
-  totalCost: number;
+  totalCost!: number;
 
   @OneToMany(() => PurchaseItem, (purchaseItem) => purchaseItem.purchase)
-  items: PurchaseItem[];
+  items!: PurchaseItem[];
 
   @OneToMany(() => StockMovement, (movement) => movement.purchase)
-  stockMovements: StockMovement[];
+  stockMovements!: StockMovement[];
 
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

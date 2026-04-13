@@ -14,28 +14,28 @@ import { User } from '../../users/entities/user.entity';
 @Index(['recipientId', 'readAt'])
 export class ChatMessage {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid' })
-  senderId: string;
+  senderId!: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'senderId' })
-  sender: User;
+  sender!: User;
 
   @Column({ type: 'uuid' })
-  recipientId: string;
+  recipientId!: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'recipientId' })
-  recipient: User;
+  recipient!: User;
 
   @Column({ type: 'varchar', length: 2000 })
-  body: string;
+  body!: string;
 
   @Column({ type: 'timestamptz', nullable: true })
-  readAt: Date | null;
+  readAt!: Date | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 }

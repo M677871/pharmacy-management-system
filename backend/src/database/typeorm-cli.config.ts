@@ -17,6 +17,10 @@ import { BroadcastMessage } from '../features/messaging/entities/broadcast-messa
 import { ChatMessage } from '../features/messaging/entities/chat-message.entity';
 import { Notification } from '../features/notifications/entities/notification.entity';
 import { Supplier } from '../features/inventory/suppliers/entities/supplier.entity';
+import { CatalogOrder } from '../features/orders/entities/catalog-order.entity';
+import { CatalogOrderItem } from '../features/orders/entities/catalog-order-item.entity';
+import { CatalogOrderItemAllocation } from '../features/orders/entities/catalog-order-item-allocation.entity';
+import { DeliveryDriver } from '../features/orders/entities/delivery-driver.entity';
 
 function loadEnvFile() {
   const envFileName = process.env.NODE_ENV === 'test' ? '.env.test' : '.env';
@@ -75,6 +79,10 @@ export default new DataSource({
     Notification,
     ChatMessage,
     BroadcastMessage,
+    DeliveryDriver,
+    CatalogOrder,
+    CatalogOrderItem,
+    CatalogOrderItemAllocation,
   ],
   migrations: [path.join(__dirname, 'migrations', '*.{js,ts}')],
 });

@@ -36,7 +36,7 @@ export class ListStockMovementsQueryDto {
 
 export class CreateStockMovementDto {
   @IsUUID()
-  productId: string;
+  productId!: string;
 }
 
 export class UpdateStockMovementDto {}

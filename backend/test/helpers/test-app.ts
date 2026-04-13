@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { AuthModule } from '../../src/features/auth/auth.module';
 import { InventoryModule } from '../../src/features/inventory/inventory.module';
+import { OrdersModule } from '../../src/features/orders/orders.module';
 import { UsersModule } from '../../src/features/users/users.module';
 
 /**
@@ -51,6 +52,7 @@ export async function createTestApp(): Promise<{
       }),
       AuthModule,
       InventoryModule,
+      OrdersModule,
       UsersModule,
     ],
   }).compile();

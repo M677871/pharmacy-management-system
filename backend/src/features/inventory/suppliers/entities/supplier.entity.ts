@@ -12,32 +12,32 @@ import { Purchase } from '../../purchases/entities/purchase.entity';
 @Entity('suppliers')
 export class Supplier {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'varchar', unique: true })
-  name: string;
+  name!: string;
 
   @Column({ type: 'varchar', nullable: true })
-  contactName: string | null;
+  contactName!: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  email: string | null;
+  email!: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  phone: string | null;
+  phone!: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  address: string | null;
+  address!: string | null;
 
   @OneToMany(() => Purchase, (purchase) => purchase.supplier)
-  purchases: Purchase[];
+  purchases!: Purchase[];
 
   @OneToMany(() => Batch, (batch) => batch.supplier)
-  batches: Batch[];
+  batches!: Batch[];
 
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

@@ -17,20 +17,20 @@ import { StockMovement } from '../../stock-movements/entities/stock-movement.ent
 @Entity('sales')
 export class Sale {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid' })
-  soldById: string;
+  soldById!: string;
 
   @ManyToOne(() => User, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'soldById' })
-  soldBy: User;
+  soldBy!: User;
 
   @Column({ type: 'varchar', nullable: true })
-  notes: string | null;
+  notes!: string | null;
 
   @Column({ type: 'timestamptz' })
-  soldAt: Date;
+  soldAt!: Date;
 
   @Column({
     type: 'numeric',
@@ -39,20 +39,20 @@ export class Sale {
     default: 0,
     transformer: decimalTransformer,
   })
-  totalAmount: number;
+  totalAmount!: number;
 
   @OneToMany(() => SaleItem, (saleItem) => saleItem.sale)
-  items: SaleItem[];
+  items!: SaleItem[];
 
   @OneToMany(() => SaleReturn, (saleReturn) => saleReturn.sale)
-  returns: SaleReturn[];
+  returns!: SaleReturn[];
 
   @OneToMany(() => StockMovement, (movement) => movement.sale)
-  stockMovements: StockMovement[];
+  stockMovements!: StockMovement[];
 
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

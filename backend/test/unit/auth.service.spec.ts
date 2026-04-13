@@ -9,8 +9,13 @@ import {
 import * as bcrypt from 'bcrypt';
 import { authenticator } from 'otplib';
 import { AuthService } from '../../src/features/auth/auth.service';
+import { PasswordResetService } from '../../src/features/auth/password-reset/password-reset.service';
 import { UsersService } from '../../src/features/users/users.service';
-import { User, UserRole } from '../../src/features/users/entities/user.entity';
+import {
+  PasswordResetMethod,
+  User,
+  UserRole,
+} from '../../src/features/users/entities/user.entity';
 
 // Helper type for a fully mocked service
 type MockService<T> = {
@@ -24,6 +29,9 @@ describe('AuthService (unit)', () => {
   let authService: AuthService;
   let usersService: MockService<UsersService>;
   let jwtService: MockService<Pick<JwtService, 'sign' | 'signAsync' | 'verify'>>;
+  let passwordResetService: MockService<
+    Pick<PasswordResetService, 'forgotPassword' | 'resetPassword'>
+  >;
   let configService: { get: jest.Mock };
 
   const mockUser: User = {
@@ -39,6 +47,8 @@ describe('AuthService (unit)', () => {
     refreshToken: null as any,
     passwordResetToken: null as any,
     passwordResetExpires: null as any,
+    passwordResetMethod: null as PasswordResetMethod | null,
+    passwordResetAttempts: 0,
     googleId: null as any,
     facebookId: null as any,
     instagramId: null as any,
@@ -51,6 +61,7 @@ describe('AuthService (unit)', () => {
       findByEmail: jest.fn(),
       findById: jest.fn(),
       create: jest.fn(),
+      createPublicUser: jest.fn(),
       createSocialUser: jest.fn(),
       update: jest.fn(),
       setRefreshToken: jest.fn(),
@@ -65,6 +76,11 @@ describe('AuthService (unit)', () => {
       sign: jest.fn().mockReturnValue('mock-jwt-token'),
       signAsync: jest.fn().mockResolvedValue('mock-jwt-token'),
       verify: jest.fn(),
+    };
+
+    passwordResetService = {
+      forgotPassword: jest.fn(),
+      resetPassword: jest.fn(),
     };
 
     configService = {
@@ -83,6 +99,7 @@ describe('AuthService (unit)', () => {
       providers: [
         AuthService,
         { provide: UsersService, useValue: usersService },
+        { provide: PasswordResetService, useValue: passwordResetService },
         { provide: JwtService, useValue: jwtService },
         { provide: ConfigService, useValue: configService },
       ],
@@ -129,8 +146,7 @@ describe('AuthService (unit)', () => {
 
   describe('register', () => {
     it('should create user and return tokens', async () => {
-      usersService.findByEmail.mockResolvedValue(null);
-      usersService.create.mockResolvedValue(mockUser);
+      usersService.createPublicUser.mockResolvedValue(mockUser);
       usersService.setRefreshToken.mockResolvedValue(undefined);
 
       const result = await authService.register({
@@ -141,11 +157,13 @@ describe('AuthService (unit)', () => {
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
       expect(result.user).not.toHaveProperty('password');
-      expect(usersService.create).toHaveBeenCalled();
+      expect(usersService.createPublicUser).toHaveBeenCalled();
     });
 
     it('should throw ConflictException for existing email', async () => {
-      usersService.findByEmail.mockResolvedValue(mockUser);
+      usersService.createPublicUser.mockRejectedValue(
+        new ConflictException('Email already registered'),
+      );
 
       await expect(
         authService.register({ email: 'user@test.com', password: 'Test1234!' }),
@@ -238,61 +256,74 @@ describe('AuthService (unit)', () => {
 
   describe('forgotPassword', () => {
     it('should return generic message for non-existent email', async () => {
-      usersService.findByEmail.mockResolvedValue(null);
+      passwordResetService.forgotPassword.mockResolvedValue({
+        message:
+          'If an account with that email exists, reset instructions have been sent.',
+        mode: 'otp',
+      });
 
       const result = await authService.forgotPassword('nobody@test.com');
       expect(result.message).toBeDefined();
-      expect(result).not.toHaveProperty('resetToken');
+      expect(result).not.toHaveProperty('resetCode');
     });
 
-    it('should return resetToken for existing user', async () => {
-      usersService.findByEmail.mockResolvedValue(mockUser);
-      usersService.update.mockResolvedValue(mockUser);
+    it('should return resetCode for existing user in otp mode', async () => {
+      passwordResetService.forgotPassword.mockResolvedValue({
+        message:
+          'If an account with that email exists, reset instructions have been sent.',
+        mode: 'otp',
+        resetCode: '123456',
+        expiresInMinutes: 10,
+      });
 
       const result = await authService.forgotPassword('user@test.com');
       expect(result.message).toBeDefined();
-      expect(result.resetToken).toBeDefined();
+      expect(result.resetCode).toBeDefined();
     });
   });
 
   describe('resetPassword', () => {
     it('should throw for invalid token', async () => {
-      usersService.findByResetToken.mockResolvedValue(null);
+      passwordResetService.resetPassword.mockRejectedValue(
+        new BadRequestException('Invalid reset token'),
+      );
 
       await expect(
-        authService.resetPassword('bad-token', 'NewPass1!'),
+        authService.resetPassword({
+          email: 'user@test.com',
+          token: 'bad-token',
+          newPassword: 'NewPass1!',
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw for expired token', async () => {
-      usersService.findByResetToken.mockResolvedValue({
-        ...mockUser,
-        passwordResetToken: 'hashed',
-        passwordResetExpires: new Date(Date.now() - 10_000), // expired
-      });
+      passwordResetService.resetPassword.mockRejectedValue(
+        new BadRequestException('Reset token has expired'),
+      );
 
       await expect(
-        authService.resetPassword('any-token', 'NewPass1!'),
+        authService.resetPassword({
+          email: 'user@test.com',
+          token: 'any-token',
+          newPassword: 'NewPass1!',
+        }),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reset password with valid token', async () => {
-      usersService.findByResetToken.mockResolvedValue({
-        ...mockUser,
-        passwordResetToken: 'hashed',
-        passwordResetExpires: new Date(Date.now() + 3_600_000), // valid
+      passwordResetService.resetPassword.mockResolvedValue({
+        message: 'Password reset successful',
       });
-      usersService.update.mockResolvedValue(mockUser);
 
-      const result = await authService.resetPassword('valid-token', 'NewPass1!');
+      const payload = {
+        email: 'user@test.com',
+        token: 'valid-token',
+        newPassword: 'NewPass1!',
+      };
+      const result = await authService.resetPassword(payload);
       expect(result.message).toMatch(/reset successful/i);
-      expect(usersService.update).toHaveBeenCalledWith(
-        mockUser.id,
-        expect.objectContaining({
-          passwordResetToken: null,
-          passwordResetExpires: null,
-        }),
-      );
+      expect(passwordResetService.resetPassword).toHaveBeenCalledWith(payload);
     });
   });
 

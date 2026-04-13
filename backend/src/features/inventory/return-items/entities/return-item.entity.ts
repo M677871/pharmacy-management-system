@@ -19,37 +19,37 @@ import { StockMovement } from '../../stock-movements/entities/stock-movement.ent
 @Check(`"quantity" > 0`)
 export class ReturnItem {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid' })
-  returnId: string;
+  returnId!: string;
 
   @ManyToOne(() => SaleReturn, (saleReturn) => saleReturn.items, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'returnId' })
-  returnTransaction: SaleReturn;
+  returnTransaction!: SaleReturn;
 
   @Column({ type: 'uuid' })
-  saleItemId: string;
+  saleItemId!: string;
 
   @ManyToOne(() => SaleItem, (saleItem) => saleItem.returnItems, {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'saleItemId' })
-  saleItem: SaleItem;
+  saleItem!: SaleItem;
 
   @Column({ type: 'uuid' })
-  productId: string;
+  productId!: string;
 
   @ManyToOne(() => Product, (product) => product.returnItems, {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'productId' })
-  product: Product;
+  product!: Product;
 
   @Column({ type: 'int' })
-  quantity: number;
+  quantity!: number;
 
   @Column({
     type: 'numeric',
@@ -57,7 +57,7 @@ export class ReturnItem {
     scale: 2,
     transformer: decimalTransformer,
   })
-  unitPrice: number;
+  unitPrice!: number;
 
   @Column({
     type: 'numeric',
@@ -65,14 +65,14 @@ export class ReturnItem {
     scale: 2,
     transformer: decimalTransformer,
   })
-  lineTotal: number;
+  lineTotal!: number;
 
   @OneToMany(() => StockMovement, (movement) => movement.returnItem)
-  stockMovements: StockMovement[];
+  stockMovements!: StockMovement[];
 
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

@@ -13,23 +13,23 @@ import {
 
 export class ReceivePurchaseItemDto {
   @IsUUID()
-  productId: string;
+  productId!: string;
 
   @IsString()
-  batchNumber: string;
+  batchNumber!: string;
 
   @IsDateString()
-  expiryDate: string;
+  expiryDate!: string;
 
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 0 })
   @Min(1)
-  quantity: number;
+  quantity!: number;
 
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  unitCost: number;
+  unitCost!: number;
 
   @IsOptional()
   @IsString()
@@ -38,7 +38,7 @@ export class ReceivePurchaseItemDto {
 
 export class ReceivePurchaseDto {
   @IsUUID()
-  supplierId: string;
+  supplierId!: string;
 
   @IsOptional()
   @IsString()
@@ -56,7 +56,7 @@ export class ReceivePurchaseDto {
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => ReceivePurchaseItemDto)
-  items: ReceivePurchaseItemDto[];
+  items!: ReceivePurchaseItemDto[];
 }
 
 export class ListPurchasesQueryDto {

@@ -13,12 +13,12 @@ import {
 
 export class CheckoutSaleItemDto {
   @IsUUID()
-  productId: string;
+  productId!: string;
 
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 0 })
   @Min(1)
-  quantity: number;
+  quantity!: number;
 
   @IsOptional()
   @Type(() => Number)
@@ -40,7 +40,7 @@ export class CheckoutSaleDto {
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => CheckoutSaleItemDto)
-  items: CheckoutSaleItemDto[];
+  items!: CheckoutSaleItemDto[];
 }
 
 export class ListSalesQueryDto {

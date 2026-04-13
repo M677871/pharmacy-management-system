@@ -96,7 +96,7 @@ export class InventoryRealtimeService {
         (batch) => batch.expiryDate >= today,
       );
       const availableQuantity = sellableBatches.reduce(
-        (sum, batch) => sum + batch.quantityOnHand,
+        (sum, batch) => sum + (batch.quantityOnHand - batch.quantityReserved),
         0,
       );
       const status = !product.isActive

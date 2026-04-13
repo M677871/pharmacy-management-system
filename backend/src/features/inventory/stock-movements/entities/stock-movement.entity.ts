@@ -25,103 +25,103 @@ import { Sale } from '../../sales/entities/sale.entity';
 @Check(`"quantity" > 0`)
 export class StockMovement {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({
     type: 'enum',
     enum: StockMovementType,
     enumName: 'stock_movement_type_enum',
   })
-  movementType: StockMovementType;
+  movementType!: StockMovementType;
 
   @Column({
     type: 'enum',
     enum: StockMovementReferenceType,
     enumName: 'stock_movement_reference_type_enum',
   })
-  referenceType: StockMovementReferenceType;
+  referenceType!: StockMovementReferenceType;
 
   @Column({ type: 'uuid' })
-  productId: string;
+  productId!: string;
 
   @ManyToOne(() => Product, (product) => product.stockMovements, {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'productId' })
-  product: Product;
+  product!: Product;
 
   @Column({ type: 'uuid', nullable: true })
-  batchId: string | null;
+  batchId!: string | null;
 
   @ManyToOne(() => Batch, (batch) => batch.stockMovements, {
     nullable: true,
     onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'batchId' })
-  batch: Batch | null;
+  batch!: Batch | null;
 
   @Column({ type: 'uuid', nullable: true })
-  purchaseId: string | null;
+  purchaseId!: string | null;
 
   @ManyToOne(() => Purchase, (purchase) => purchase.stockMovements, {
     nullable: true,
     onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'purchaseId' })
-  purchase: Purchase | null;
+  purchase!: Purchase | null;
 
   @Column({ type: 'uuid', nullable: true })
-  purchaseItemId: string | null;
+  purchaseItemId!: string | null;
 
   @ManyToOne(() => PurchaseItem, (purchaseItem) => purchaseItem.stockMovements, {
     nullable: true,
     onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'purchaseItemId' })
-  purchaseItem: PurchaseItem | null;
+  purchaseItem!: PurchaseItem | null;
 
   @Column({ type: 'uuid', nullable: true })
-  saleId: string | null;
+  saleId!: string | null;
 
   @ManyToOne(() => Sale, (sale) => sale.stockMovements, {
     nullable: true,
     onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'saleId' })
-  sale: Sale | null;
+  sale!: Sale | null;
 
   @Column({ type: 'uuid', nullable: true })
-  saleItemId: string | null;
+  saleItemId!: string | null;
 
   @ManyToOne(() => SaleItem, (saleItem) => saleItem.stockMovements, {
     nullable: true,
     onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'saleItemId' })
-  saleItem: SaleItem | null;
+  saleItem!: SaleItem | null;
 
   @Column({ type: 'uuid', nullable: true })
-  returnId: string | null;
+  returnId!: string | null;
 
   @ManyToOne(() => SaleReturn, (saleReturn) => saleReturn.stockMovements, {
     nullable: true,
     onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'returnId' })
-  returnTransaction: SaleReturn | null;
+  returnTransaction!: SaleReturn | null;
 
   @Column({ type: 'uuid', nullable: true })
-  returnItemId: string | null;
+  returnItemId!: string | null;
 
   @ManyToOne(() => ReturnItem, (returnItem) => returnItem.stockMovements, {
     nullable: true,
     onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'returnItemId' })
-  returnItem: ReturnItem | null;
+  returnItem!: ReturnItem | null;
 
   @Column({ type: 'int' })
-  quantity: number;
+  quantity!: number;
 
   @Column({
     type: 'numeric',
@@ -130,7 +130,7 @@ export class StockMovement {
     nullable: true,
     transformer: decimalTransformer,
   })
-  unitCost: number | null;
+  unitCost!: number | null;
 
   @Column({
     type: 'numeric',
@@ -139,14 +139,14 @@ export class StockMovement {
     nullable: true,
     transformer: decimalTransformer,
   })
-  unitPrice: number | null;
+  unitPrice!: number | null;
 
   @Column({ type: 'timestamptz' })
-  occurredAt: Date;
+  occurredAt!: Date;
 
   @Column({ type: 'varchar', nullable: true })
-  note: string | null;
+  note!: string | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 }

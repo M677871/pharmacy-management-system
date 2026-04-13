@@ -17,29 +17,29 @@ import { StockMovement } from '../../stock-movements/entities/stock-movement.ent
 @Entity('sale_returns')
 export class SaleReturn {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid' })
-  saleId: string;
+  saleId!: string;
 
   @ManyToOne(() => Sale, (sale) => sale.returns, {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'saleId' })
-  sale: Sale;
+  sale!: Sale;
 
   @Column({ type: 'uuid' })
-  processedById: string;
+  processedById!: string;
 
   @ManyToOne(() => User, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'processedById' })
-  processedBy: User;
+  processedBy!: User;
 
   @Column({ type: 'varchar', nullable: true })
-  reason: string | null;
+  reason!: string | null;
 
   @Column({ type: 'timestamptz' })
-  returnedAt: Date;
+  returnedAt!: Date;
 
   @Column({
     type: 'numeric',
@@ -48,17 +48,17 @@ export class SaleReturn {
     default: 0,
     transformer: decimalTransformer,
   })
-  totalRefund: number;
+  totalRefund!: number;
 
   @OneToMany(() => ReturnItem, (returnItem) => returnItem.returnTransaction)
-  items: ReturnItem[];
+  items!: ReturnItem[];
 
   @OneToMany(() => StockMovement, (movement) => movement.returnTransaction)
-  stockMovements: StockMovement[];
+  stockMovements!: StockMovement[];
 
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

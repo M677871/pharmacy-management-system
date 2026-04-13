@@ -2,25 +2,32 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Product } from '../../products/entities/product.entity';
 
-@Entity('categories')
-export class Category {
+@Entity('delivery_drivers')
+export class DeliveryDriver {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'varchar', unique: true })
   name!: string;
 
-  @Column({ type: 'varchar', nullable: true })
-  description!: string | null;
+  @Column({ type: 'varchar' })
+  phone!: string;
 
-  @OneToMany(() => Product, (product) => product.category)
-  products!: Product[];
+  @Column({ type: 'varchar', nullable: true })
+  email!: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  vehicleDescription!: string | null;
+
+  @Column({ type: 'boolean', default: true })
+  isActive!: boolean;
+
+  @Column({ type: 'varchar', nullable: true })
+  notes!: string | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;

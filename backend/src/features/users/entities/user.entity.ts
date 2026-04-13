@@ -20,59 +20,59 @@ export enum PasswordResetMethod {
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'varchar', unique: true })
-  email: string;
+  email!: string;
 
   @Column({ type: 'varchar', nullable: true })
-  password: string | null;
+  password!: string | null;
 
   @Column({ type: 'varchar', default: '' })
-  firstName: string;
+  firstName!: string;
 
   @Column({ type: 'varchar', default: '' })
-  lastName: string;
+  lastName!: string;
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.CUSTOMER })
-  role: UserRole;
+  role!: UserRole;
 
   @Column({ type: 'boolean', default: false })
-  isEmailVerified: boolean;
+  isEmailVerified!: boolean;
 
   @Column({ type: 'varchar', nullable: true })
-  totpSecret: string | null;
+  totpSecret!: string | null;
 
   @Column({ type: 'boolean', default: false })
-  isTotpEnabled: boolean;
+  isTotpEnabled!: boolean;
 
   @Column({ type: 'varchar', nullable: true })
-  refreshToken: string | null;
+  refreshToken!: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  passwordResetToken: string | null;
+  passwordResetToken!: string | null;
 
   @Column({ type: 'timestamptz', nullable: true })
-  passwordResetExpires: Date | null;
+  passwordResetExpires!: Date | null;
 
   @Column({ type: 'varchar', nullable: true })
-  passwordResetMethod: PasswordResetMethod | null;
+  passwordResetMethod!: PasswordResetMethod | null;
 
   @Column({ type: 'integer', default: 0 })
-  passwordResetAttempts: number;
+  passwordResetAttempts!: number;
 
   @Column({ type: 'varchar', nullable: true })
-  googleId: string | null;
+  googleId!: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  facebookId: string | null;
+  facebookId!: string | null;
 
   @Column({ type: 'varchar', nullable: true })
-  instagramId: string | null;
+  instagramId!: string | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

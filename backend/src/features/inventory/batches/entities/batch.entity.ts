@@ -21,41 +21,46 @@ import { Supplier } from '../../suppliers/entities/supplier.entity';
 @Index(['productId', 'batchNumber', 'expiryDate'], { unique: true })
 @Check(`"receivedQuantity" >= 0`)
 @Check(`"quantityOnHand" >= 0`)
+@Check(`"quantityReserved" >= 0`)
 @Check(`"receivedQuantity" >= "quantityOnHand"`)
+@Check(`"quantityOnHand" >= "quantityReserved"`)
 export class Batch {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid' })
-  productId: string;
+  productId!: string;
 
   @ManyToOne(() => Product, (product) => product.batches, {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({ name: 'productId' })
-  product: Product;
+  product!: Product;
 
   @Column({ type: 'uuid', nullable: true })
-  supplierId: string | null;
+  supplierId!: string | null;
 
   @ManyToOne(() => Supplier, (supplier) => supplier.batches, {
     nullable: true,
     onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'supplierId' })
-  supplier: Supplier | null;
+  supplier!: Supplier | null;
 
   @Column({ type: 'varchar' })
-  batchNumber: string;
+  batchNumber!: string;
 
   @Column({ type: 'date' })
-  expiryDate: string;
+  expiryDate!: string;
 
   @Column({ type: 'int', default: 0 })
-  receivedQuantity: number;
+  receivedQuantity!: number;
 
   @Column({ type: 'int', default: 0 })
-  quantityOnHand: number;
+  quantityOnHand!: number;
+
+  @Column({ type: 'int', default: 0 })
+  quantityReserved!: number;
 
   @Column({
     type: 'numeric',
@@ -63,26 +68,26 @@ export class Batch {
     scale: 2,
     transformer: decimalTransformer,
   })
-  unitCost: number;
+  unitCost!: number;
 
   @Column({ type: 'timestamptz' })
-  receivedAt: Date;
+  receivedAt!: Date;
 
   @Column({ type: 'varchar', nullable: true })
-  notes: string | null;
+  notes!: string | null;
 
   @OneToMany(() => PurchaseItem, (purchaseItem) => purchaseItem.batch)
-  purchaseItems: PurchaseItem[];
+  purchaseItems!: PurchaseItem[];
 
   @OneToMany(() => SaleItemAllocation, (allocation) => allocation.batch)
-  saleItemAllocations: SaleItemAllocation[];
+  saleItemAllocations!: SaleItemAllocation[];
 
   @OneToMany(() => StockMovement, (movement) => movement.batch)
-  stockMovements: StockMovement[];
+  stockMovements!: StockMovement[];
 
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

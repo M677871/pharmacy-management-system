@@ -22,6 +22,8 @@ export enum RealtimeServerEvent {
   CHAT_MESSAGE_DELETED = 'chat.message.deleted',
   CHAT_THREAD_READ = 'chat.thread.read',
   BROADCAST_CREATED = 'broadcast.created',
+  ORDER_CREATED = 'order.created',
+  ORDER_UPDATED = 'order.updated',
 }
 
 export enum RealtimeClientEvent {

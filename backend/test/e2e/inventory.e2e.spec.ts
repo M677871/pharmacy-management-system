@@ -115,7 +115,7 @@ describe('Inventory / POS workflow (e2e)', () => {
       {
         productId: product.id,
         batchNumber: 'P-APR',
-        expiryDate: '2026-04-15T00:00:00.000Z',
+        expiryDate: '2027-04-15T00:00:00.000Z',
         quantity: 5,
         unitCost: 8,
       },
@@ -125,7 +125,7 @@ describe('Inventory / POS workflow (e2e)', () => {
       {
         productId: product.id,
         batchNumber: 'P-MAR',
-        expiryDate: '2026-03-20T00:00:00.000Z',
+        expiryDate: '2027-03-20T00:00:00.000Z',
         quantity: 7,
         unitCost: 8,
       },

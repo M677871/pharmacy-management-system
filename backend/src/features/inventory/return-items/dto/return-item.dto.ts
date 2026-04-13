@@ -22,18 +22,18 @@ export class ListReturnItemsQueryDto {
 
 export class CreateReturnItemDto {
   @IsUUID()
-  returnId: string;
+  returnId!: string;
 
   @IsUUID()
-  saleItemId: string;
+  saleItemId!: string;
 
   @IsUUID()
-  productId: string;
+  productId!: string;
 
   @Transform(({ value }) => Number(value))
   @IsNumber({ maxDecimalPlaces: 0 })
   @Min(1)
-  quantity: number;
+  quantity!: number;
 }
 
 export class UpdateReturnItemDto {

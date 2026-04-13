@@ -13,17 +13,17 @@ import {
 
 export class CreateReturnItemDto {
   @IsUUID()
-  saleItemId: string;
+  saleItemId!: string;
 
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 0 })
   @Min(1)
-  quantity: number;
+  quantity!: number;
 }
 
 export class CreateReturnDto {
   @IsUUID()
-  saleId: string;
+  saleId!: string;
 
   @IsOptional()
   @IsString()
@@ -37,7 +37,7 @@ export class CreateReturnDto {
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => CreateReturnItemDto)
-  items: CreateReturnItemDto[];
+  items!: CreateReturnItemDto[];
 }
 
 export class ListReturnsQueryDto {

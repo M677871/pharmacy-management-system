@@ -10,6 +10,7 @@ export type InventoryChangeReason =
   | 'product.created'
   | 'product.updated'
   | 'product.deleted'
+  | 'order.approved'
   | 'batch.updated'
   | 'category.created'
   | 'category.updated'
@@ -123,4 +124,66 @@ export interface BroadcastPayload {
   audienceRoles: UserRole[];
   sender: RealtimeUserSummary;
   createdAt: string;
+}
+
+export type OrderStatusValue =
+  | 'pending_assignment'
+  | 'pending_review'
+  | 'approved'
+  | 'rejected'
+  | 'completed';
+
+export interface DeliveryDriverPayload {
+  id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  vehicleDescription: string | null;
+  notes: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrderItemAllocationPayload {
+  id: string;
+  batchId: string;
+  batchNumber: string;
+  expiryDate: string;
+  quantity: number;
+}
+
+export interface OrderItemPayload {
+  id: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  unit: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  allocations: OrderItemAllocationPayload[];
+}
+
+export interface OrderPayload {
+  id: string;
+  orderNumber: string;
+  status: OrderStatusValue;
+  notes: string | null;
+  approvalMessage: string | null;
+  rejectionReason: string | null;
+  paymentMethod: 'cash' | null;
+  totalAmount: number;
+  saleId: string | null;
+  itemCount: number;
+  client: RealtimeUserSummary;
+  assignedEmployee: RealtimeUserSummary | null;
+  deliveryDriver: DeliveryDriverPayload | null;
+  items: OrderItemPayload[];
+  createdAt: string;
+  assignedAt: string | null;
+  reviewedAt: string | null;
+  locationSharedAt: string | null;
+  paidAt: string | null;
+  updatedAt: string;
 }

@@ -18,23 +18,23 @@ export class ListPurchaseItemsQueryDto {
 
 export class CreatePurchaseItemDto {
   @IsUUID()
-  purchaseId: string;
+  purchaseId!: string;
 
   @IsUUID()
-  productId: string;
+  productId!: string;
 
   @IsUUID()
-  batchId: string;
+  batchId!: string;
 
   @Transform(({ value }) => Number(value))
   @IsNumber({ maxDecimalPlaces: 0 })
   @Min(1)
-  quantity: number;
+  quantity!: number;
 
   @Transform(({ value }) => Number(value))
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  unitCost: number;
+  unitCost!: number;
 }
 
 export class UpdatePurchaseItemDto {

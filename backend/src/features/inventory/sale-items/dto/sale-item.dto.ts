@@ -18,20 +18,20 @@ export class ListSaleItemsQueryDto {
 
 export class CreateSaleItemDto {
   @IsUUID()
-  saleId: string;
+  saleId!: string;
 
   @IsUUID()
-  productId: string;
+  productId!: string;
 
   @Transform(({ value }) => Number(value))
   @IsNumber({ maxDecimalPlaces: 0 })
   @Min(1)
-  quantity: number;
+  quantity!: number;
 
   @Transform(({ value }) => Number(value))
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  unitPrice: number;
+  unitPrice!: number;
 }
 
 export class UpdateSaleItemDto {

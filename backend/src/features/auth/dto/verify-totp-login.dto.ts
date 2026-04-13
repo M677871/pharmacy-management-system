@@ -2,8 +2,8 @@ import { IsString } from 'class-validator';
 
 export class VerifyTotpLoginDto {
   @IsString()
-  tempToken: string;
+  tempToken!: string;
 
   @IsString()
-  code: string;
+  code!: string;
 }

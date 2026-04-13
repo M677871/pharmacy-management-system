@@ -21,10 +21,10 @@ export class ListProductsQueryDto {
 
 export class CreateProductDto {
   @IsString()
-  sku: string;
+  sku!: string;
 
   @IsString()
-  name: string;
+  name!: string;
 
   @IsOptional()
   @IsString()
@@ -41,7 +41,7 @@ export class CreateProductDto {
   @Transform(({ value }) => Number(value))
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  salePrice: number;
+  salePrice!: number;
 
   @IsOptional()
   @IsUUID()

@@ -7,31 +7,29 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { decimalTransformer } from '../../decimal.transformer';
-import { Batch } from '../../batches/entities/batch.entity';
-import { SaleItem } from '../../sale-items/entities/sale-item.entity';
+import { decimalTransformer } from '../../inventory/decimal.transformer';
+import { Batch } from '../../inventory/batches/entities/batch.entity';
+import { CatalogOrderItem } from './catalog-order-item.entity';
 
-@Entity('sale_item_allocations')
+@Entity('catalog_order_item_allocations')
 @Check(`"quantity" > 0`)
-export class SaleItemAllocation {
+export class CatalogOrderItemAllocation {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'uuid' })
-  saleItemId!: string;
+  orderItemId!: string;
 
-  @ManyToOne(() => SaleItem, (saleItem) => saleItem.allocations, {
+  @ManyToOne(() => CatalogOrderItem, (orderItem) => orderItem.allocations, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'saleItemId' })
-  saleItem!: SaleItem;
+  @JoinColumn({ name: 'orderItemId' })
+  orderItem!: CatalogOrderItem;
 
   @Column({ type: 'uuid' })
   batchId!: string;
 
-  @ManyToOne(() => Batch, (batch) => batch.saleItemAllocations, {
-    onDelete: 'RESTRICT',
-  })
+  @ManyToOne(() => Batch, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'batchId' })
   batch!: Batch;
 

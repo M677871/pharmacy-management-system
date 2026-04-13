@@ -78,7 +78,7 @@ export class ProductsService {
         categoryId: product.categoryId,
         categoryName: product.category?.name ?? null,
         availableQuantity: sellableBatches.reduce(
-          (sum, batch) => sum + batch.quantityOnHand,
+          (sum, batch) => sum + (batch.quantityOnHand - batch.quantityReserved),
           0,
         ),
         totalOnHand: activeBatches.reduce(
@@ -113,7 +113,7 @@ export class ProductsService {
       categoryId: product.categoryId,
       categoryName: product.category?.name ?? null,
       availableQuantity: sellableBatches.reduce(
-        (sum, batch) => sum + batch.quantityOnHand,
+        (sum, batch) => sum + (batch.quantityOnHand - batch.quantityReserved),
         0,
       ),
       totalOnHand: activeBatches.reduce(

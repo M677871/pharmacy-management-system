@@ -57,7 +57,7 @@ export class AllocationService {
         .createQueryBuilder('batch')
         .setLock('pessimistic_write')
         .where('batch.productId = :productId', { productId })
-        .andWhere('batch.quantityOnHand > 0')
+        .andWhere('batch.quantityOnHand > batch.quantityReserved')
         .andWhere('batch.expiryDate >= :saleDate', { saleDate })
         .orderBy('batch.expiryDate', 'ASC')
         .addOrderBy('batch.receivedAt', 'ASC')
@@ -72,7 +72,10 @@ export class AllocationService {
           break;
         }
 
-        const allocatedQuantity = Math.min(batch.quantityOnHand, remaining);
+        const allocatedQuantity = Math.min(
+          batch.quantityOnHand - batch.quantityReserved,
+          remaining,
+        );
         if (allocatedQuantity <= 0) {
           continue;
         }

@@ -14,6 +14,7 @@ export enum NotificationType {
   OUT_OF_STOCK = 'out_of_stock',
   EXPIRY_WARNING = 'expiry_warning',
   BROADCAST = 'broadcast',
+  ORDER = 'order',
   SYSTEM = 'system',
 }
 
@@ -29,45 +30,45 @@ export enum NotificationSeverity {
 @Index(['userId', 'dedupeKey'])
 export class Notification {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column({ type: 'uuid' })
-  userId: string;
+  userId!: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
-  user: User;
+  user!: User;
 
   @Column({ type: 'enum', enum: NotificationType })
-  type: NotificationType;
+  type!: NotificationType;
 
   @Column({ type: 'enum', enum: NotificationSeverity })
-  severity: NotificationSeverity;
+  severity!: NotificationSeverity;
 
   @Column({ type: 'varchar' })
-  title: string;
+  title!: string;
 
   @Column({ type: 'varchar' })
-  body: string;
+  body!: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  metadata: Record<string, unknown> | null;
+  metadata!: Record<string, unknown> | null;
 
   @Column({ type: 'varchar', nullable: true })
-  dedupeKey: string | null;
+  dedupeKey!: string | null;
 
   @Column({ type: 'boolean', default: false })
-  isRead: boolean;
+  isRead!: boolean;
 
   @Column({ type: 'timestamptz', nullable: true })
-  readAt: Date | null;
+  readAt!: Date | null;
 
   @Column({ type: 'boolean', default: false })
-  isResolved: boolean;
+  isResolved!: boolean;
 
   @Column({ type: 'timestamptz', nullable: true })
-  resolvedAt: Date | null;
+  resolvedAt!: Date | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 }

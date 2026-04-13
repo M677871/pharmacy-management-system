@@ -20,7 +20,8 @@ import { UpdateDirectMessageDto } from '../messaging/dto/update-direct-message.d
 import { ChatService } from '../messaging/chat.service';
 import { MarkNotificationReadDto } from '../notifications/dto/mark-notification-read.dto';
 import { NotificationsService } from '../notifications/notifications.service';
-import { User } from '../users/entities/user.entity';
+import { OrdersService } from '../orders/orders.service';
+import { User, UserRole } from '../users/entities/user.entity';
 import { PresenceService } from './core/presence.service';
 import { RealtimeEmitterService } from './core/realtime-emitter.service';
 import { SocketAuthService } from './core/socket-auth.service';
@@ -50,7 +51,7 @@ export class RealtimeGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
-  private server: Server;
+  private server!: Server;
 
   constructor(
     private readonly socketAuthService: SocketAuthService,
@@ -59,6 +60,7 @@ export class RealtimeGateway
     private readonly notificationsService: NotificationsService,
     private readonly chatService: ChatService,
     private readonly broadcastsService: BroadcastsService,
+    private readonly ordersService: OrdersService,
   ) {}
 
   afterInit(server: Server) {
@@ -85,6 +87,11 @@ export class RealtimeGateway
     await client.join(realtimeRoom.role(user.role));
 
     this.presenceService.registerConnection(client.id, user);
+    if (user.role === UserRole.EMPLOYEE) {
+      void this.ordersService.assignPendingOrders().catch(() => {
+        return;
+      });
+    }
     client.emit(RealtimeServerEvent.SYSTEM_CONNECTED, {
       userId: user.id,
       connectedAt: new Date().toISOString(),
@@ -106,6 +113,13 @@ export class RealtimeGateway
   ) {
     const user = this.getSocketUser(client);
     this.presenceService.markActive(user.id);
+
+    if (user.role === UserRole.EMPLOYEE) {
+      void this.ordersService.assignPendingOrders().catch(() => {
+        return;
+      });
+    }
+
     return { ok: true };
   }
 

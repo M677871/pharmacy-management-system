@@ -27,25 +27,25 @@ export class ListBatchesQueryDto {
 
 export class CreateBatchDto {
   @IsUUID()
-  productId: string;
+  productId!: string;
 
   @IsOptional()
   @IsUUID()
   supplierId?: string;
 
   @IsString()
-  batchNumber: string;
+  batchNumber!: string;
 
   @IsDateString()
-  expiryDate: string;
+  expiryDate!: string;
 
   @IsNumber({ maxDecimalPlaces: 0 })
   @Min(1)
-  quantity: number;
+  quantity!: number;
 
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  unitCost: number;
+  unitCost!: number;
 
   @IsOptional()
   @IsString()
