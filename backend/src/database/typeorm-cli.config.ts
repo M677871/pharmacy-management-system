@@ -13,6 +13,9 @@ import { SaleItem } from '../features/inventory/sale-items/entities/sale-item.en
 import { SaleReturn } from '../features/inventory/sale-returns/entities/sale-return.entity';
 import { Sale } from '../features/inventory/sales/entities/sale.entity';
 import { StockMovement } from '../features/inventory/stock-movements/entities/stock-movement.entity';
+import { BroadcastMessage } from '../features/messaging/entities/broadcast-message.entity';
+import { ChatMessage } from '../features/messaging/entities/chat-message.entity';
+import { Notification } from '../features/notifications/entities/notification.entity';
 import { Supplier } from '../features/inventory/suppliers/entities/supplier.entity';
 
 function loadEnvFile() {
@@ -69,6 +72,9 @@ export default new DataSource({
     SaleReturn,
     ReturnItem,
     StockMovement,
+    Notification,
+    ChatMessage,
+    BroadcastMessage,
   ],
   migrations: [path.join(__dirname, 'migrations', '*.{js,ts}')],
 });
