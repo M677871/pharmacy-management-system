@@ -343,6 +343,8 @@ export function useMessagingWorkspace() {
         contact,
         lastMessage: message,
         unreadCount,
+        isClosed: existingSummary?.isClosed ?? false,
+        closedAt: existingSummary?.closedAt ?? null,
       });
     });
 
