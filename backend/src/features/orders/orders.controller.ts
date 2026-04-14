@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -54,6 +55,12 @@ export class OrdersController {
     @Body() dto: UpdateDeliveryDriverDto,
   ) {
     return this.ordersService.updateDeliveryDriver(driverId, dto);
+  }
+
+  @Delete('drivers/:driverId')
+  @Roles(UserRole.ADMIN, UserRole.EMPLOYEE)
+  removeDeliveryDriver(@Param('driverId', ParseUUIDPipe) driverId: string) {
+    return this.ordersService.removeDeliveryDriver(driverId);
   }
 
   @Post()
