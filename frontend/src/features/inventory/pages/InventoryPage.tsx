@@ -26,6 +26,12 @@ interface ProductFormState {
   isActive: boolean;
 }
 
+interface CategoryFormState {
+  id?: string;
+  name: string;
+  description: string;
+}
+
 const EMPTY_PRODUCT_FORM: ProductFormState = {
   sku: '',
   name: '',
@@ -37,6 +43,11 @@ const EMPTY_PRODUCT_FORM: ProductFormState = {
   isActive: true,
 };
 
+const EMPTY_CATEGORY_FORM: CategoryFormState = {
+  name: '',
+  description: '',
+};
+
 export function InventoryPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<ProductSummary[]>([]);
@@ -44,12 +55,19 @@ export function InventoryPage() {
   const [selectedBatches, setSelectedBatches] = useState<ProductBatch[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [productForm, setProductForm] = useState<ProductFormState>(EMPTY_PRODUCT_FORM);
-  const [categoryName, setCategoryName] = useState('');
-  const [categoryDescription, setCategoryDescription] = useState('');
+  const [categoryForm, setCategoryForm] = useState<CategoryFormState>(
+    EMPTY_CATEGORY_FORM,
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [flashMessage, setFlashMessage] = useState('');
+
+  function resolveCategoryId(categoryData: Category[], currentCategoryId: string) {
+    return categoryData.some((category) => category.id === currentCategoryId)
+      ? currentCategoryId
+      : categoryData[0]?.id || '';
+  }
 
   async function loadData(
     search = searchTerm,
@@ -67,7 +85,7 @@ export function InventoryPage() {
     const fallbackCategoryId = categoryData[0]?.id || '';
     setProductForm((current) => ({
       ...current,
-      categoryId: current.categoryId || fallbackCategoryId,
+      categoryId: resolveCategoryId(categoryData, current.categoryId) || fallbackCategoryId,
     }));
 
     if (nextSelectedProductId) {
@@ -75,7 +93,7 @@ export function InventoryPage() {
         productData.find((product) => product.id === nextSelectedProductId) ?? null;
 
       if (activeProduct) {
-        await inspectProduct(activeProduct);
+        await inspectProduct(activeProduct, categoryData);
       } else {
         setSelectedProductId('');
         setSelectedBatches([]);
@@ -107,7 +125,10 @@ export function InventoryPage() {
     });
   });
 
-  async function inspectProduct(product: ProductSummary) {
+  async function inspectProduct(
+    product: ProductSummary,
+    categoryData = categories,
+  ) {
     setSelectedProductId(product.id);
     setProductForm({
       id: product.id,
@@ -117,7 +138,11 @@ export function InventoryPage() {
       description: product.description || '',
       unit: product.unit,
       salePrice: String(product.salePrice),
-      categoryId: product.categoryId || categories[0]?.id || '',
+      categoryId:
+        product.categoryId &&
+        categoryData.some((category) => category.id === product.categoryId)
+          ? product.categoryId
+          : '',
       isActive: product.isActive,
     });
     const batches = await inventoryService.listProductBatches(product.id);
@@ -167,24 +192,87 @@ export function InventoryPage() {
     }
   }
 
-  async function handleCreateCategory(event: FormEvent) {
+  async function handleDeleteProduct() {
+    if (!productForm.id) {
+      return;
+    }
+
+    const productName = productForm.name.trim() || 'this product';
+    if (!window.confirm(`Delete ${productName}?`)) {
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setFlashMessage('');
+
+    try {
+      await inventoryService.deleteProduct(productForm.id);
+      setSelectedProductId('');
+      setSelectedBatches([]);
+      setProductForm({
+        ...EMPTY_PRODUCT_FORM,
+        categoryId: categories[0]?.id || '',
+      });
+      await loadData(searchTerm, '');
+      setFlashMessage('Product deleted successfully.');
+    } catch (deleteError) {
+      setError(getErrorMessage(deleteError, 'Unable to delete the product.'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSaveCategory(event: FormEvent) {
     event.preventDefault();
     setSaving(true);
     setError('');
     setFlashMessage('');
 
     try {
-      const category = await inventoryService.createCategory({
-        name: categoryName,
-        description: categoryDescription || undefined,
-      });
-      await loadData(searchTerm);
-      setCategoryName('');
-      setCategoryDescription('');
-      setProductForm((current) => ({ ...current, categoryId: category.id }));
-      setFlashMessage('Category created successfully.');
+      if (categoryForm.id) {
+        await inventoryService.updateCategory(categoryForm.id, {
+          name: categoryForm.name,
+          description: categoryForm.description || null,
+        });
+        await loadData(searchTerm, selectedProductId);
+        setFlashMessage('Category updated successfully.');
+      } else {
+        const category = await inventoryService.createCategory({
+          name: categoryForm.name,
+          description: categoryForm.description || undefined,
+        });
+        await loadData(searchTerm, selectedProductId);
+        setProductForm((current) => ({ ...current, categoryId: category.id }));
+        setFlashMessage('Category created successfully.');
+      }
+
+      setCategoryForm(EMPTY_CATEGORY_FORM);
     } catch (saveError) {
-      setError(getErrorMessage(saveError, 'Unable to create category.'));
+      setError(getErrorMessage(saveError, 'Unable to save the category.'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteCategory(category: Category) {
+    if (!window.confirm(`Delete ${category.name}?`)) {
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setFlashMessage('');
+
+    try {
+      await inventoryService.deleteCategory(category.id);
+      if (categoryForm.id === category.id) {
+        setCategoryForm(EMPTY_CATEGORY_FORM);
+      }
+      await loadData(searchTerm, selectedProductId);
+      setFlashMessage('Category deleted successfully.');
+    } catch (deleteError) {
+      setError(getErrorMessage(deleteError, 'Unable to delete the category.'));
     } finally {
       setSaving(false);
     }
@@ -401,53 +489,149 @@ export function InventoryPage() {
               />
               Active for sale
             </label>
-            <button
-              type="submit"
-              className="workspace-primary-action workspace-field-span-two"
-              disabled={saving}
-            >
-              {saving
-                ? productForm.id
-                  ? 'Saving changes…'
-                  : 'Creating product…'
-                : productForm.id
-                  ? 'Save Changes'
-                  : 'Create Product'}
-            </button>
+            {productForm.id ? (
+              <div className="button-row workspace-field-span-two">
+                <button
+                  type="submit"
+                  className="workspace-primary-action"
+                  disabled={saving}
+                >
+                  {saving ? 'Saving changes…' : 'Save Changes'}
+                </button>
+                <button
+                  type="button"
+                  className="workspace-secondary-action"
+                  disabled={saving}
+                  onClick={() => {
+                    setSelectedProductId('');
+                    setSelectedBatches([]);
+                    setProductForm({
+                      ...EMPTY_PRODUCT_FORM,
+                      categoryId: categories[0]?.id || '',
+                    });
+                  }}
+                >
+                  New Product
+                </button>
+                <button
+                  type="button"
+                  className="workspace-danger-action"
+                  disabled={saving}
+                  onClick={() => void handleDeleteProduct()}
+                >
+                  Delete Product
+                </button>
+              </div>
+            ) : (
+              <button
+                type="submit"
+                className="workspace-primary-action workspace-field-span-two"
+                disabled={saving}
+              >
+                {saving ? 'Creating product…' : 'Create Product'}
+              </button>
+            )}
           </form>
 
           <div className="surface-divider" />
 
-          <form className="workspace-form-grid" onSubmit={handleCreateCategory}>
+          <form className="workspace-form-grid" onSubmit={handleSaveCategory}>
             <div className="surface-card-header compact">
               <div>
                 <span className="surface-card-eyebrow">Support</span>
-                <h2>Quick category setup</h2>
+                <h2>{categoryForm.id ? 'Edit category' : 'Category registry'}</h2>
               </div>
             </div>
             <label className="workspace-field">
               <span>Category Name</span>
               <input
-                value={categoryName}
-                onChange={(event) => setCategoryName(event.target.value)}
+                value={categoryForm.name}
+                onChange={(event) =>
+                  setCategoryForm((current) => ({
+                    ...current,
+                    name: event.target.value,
+                  }))
+                }
                 required
               />
             </label>
             <label className="workspace-field">
               <span>Description</span>
               <input
-                value={categoryDescription}
-                onChange={(event) => setCategoryDescription(event.target.value)}
+                value={categoryForm.description}
+                onChange={(event) =>
+                  setCategoryForm((current) => ({
+                    ...current,
+                    description: event.target.value,
+                  }))
+                }
               />
             </label>
-            <button
-              type="submit"
-              className="workspace-secondary-action workspace-field-span-two"
-              disabled={saving}
-            >
-              Add Category
-            </button>
+            <div className="button-row workspace-field-span-two">
+              <button
+                type="submit"
+                className="workspace-secondary-action"
+                disabled={saving}
+              >
+                {saving
+                  ? categoryForm.id
+                    ? 'Saving category…'
+                    : 'Creating category…'
+                  : categoryForm.id
+                    ? 'Save Category'
+                    : 'Add Category'}
+              </button>
+              {categoryForm.id ? (
+                <button
+                  type="button"
+                  className="workspace-inline-link"
+                  disabled={saving}
+                  onClick={() => setCategoryForm(EMPTY_CATEGORY_FORM)}
+                >
+                  Cancel
+                </button>
+              ) : null}
+            </div>
           </form>
+
+          {categories.length ? (
+            <div className="stacked-list">
+              {categories.map((category) => (
+                <div key={category.id} className="stacked-list-row">
+                  <div>
+                    <strong>{category.name}</strong>
+                    <span>{category.description || 'No description set.'}</span>
+                  </div>
+                  <div className="stacked-list-actions">
+                    <button
+                      type="button"
+                      className="workspace-inline-link"
+                      disabled={saving}
+                      onClick={() =>
+                        setCategoryForm({
+                          id: category.id,
+                          name: category.name,
+                          description: category.description || '',
+                        })
+                      }
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="workspace-inline-link workspace-inline-link-danger"
+                      disabled={saving}
+                      onClick={() => void handleDeleteCategory(category)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="surface-empty">No categories added yet.</div>
+          )}
         </article>
       </section>
 

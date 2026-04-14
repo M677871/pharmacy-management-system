@@ -19,7 +19,7 @@ const RANGE_OPTIONS = [7, 30, 90];
 
 export function DashboardPage() {
   const { user } = useAuth();
-  const [rangeDays, setRangeDays] = useState(30);
+  const [rangeDays, setRangeDays] = useState(7);
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

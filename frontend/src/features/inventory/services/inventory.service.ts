@@ -24,6 +24,27 @@ export const inventoryService = {
     return data;
   },
 
+  async updateCategory(
+    categoryId: string,
+    payload: Partial<{
+      name: string;
+      description: string | null;
+    }>,
+  ) {
+    const { data } = await api.patch<Category>(
+      `/inventory/categories/${categoryId}`,
+      payload,
+    );
+    return data;
+  },
+
+  async deleteCategory(categoryId: string) {
+    const { data } = await api.delete<{ id: string }>(
+      `/inventory/categories/${categoryId}`,
+    );
+    return data;
+  },
+
   async listSuppliers() {
     const { data } = await api.get<Supplier[]>('/inventory/suppliers');
     return data;
@@ -37,6 +58,30 @@ export const inventoryService = {
     address?: string;
   }) {
     const { data } = await api.post<Supplier>('/inventory/suppliers', payload);
+    return data;
+  },
+
+  async updateSupplier(
+    supplierId: string,
+    payload: Partial<{
+      name: string;
+      contactName: string | null;
+      email: string | null;
+      phone: string | null;
+      address: string | null;
+    }>,
+  ) {
+    const { data } = await api.patch<Supplier>(
+      `/inventory/suppliers/${supplierId}`,
+      payload,
+    );
+    return data;
+  },
+
+  async deleteSupplier(supplierId: string) {
+    const { data } = await api.delete<{ id: string }>(
+      `/inventory/suppliers/${supplierId}`,
+    );
     return data;
   },
 
@@ -83,6 +128,13 @@ export const inventoryService = {
     const { data } = await api.patch<ProductSummary>(
       `/inventory/products/${productId}`,
       payload,
+    );
+    return data;
+  },
+
+  async deleteProduct(productId: string) {
+    const { data } = await api.delete<{ id: string }>(
+      `/inventory/products/${productId}`,
     );
     return data;
   },
