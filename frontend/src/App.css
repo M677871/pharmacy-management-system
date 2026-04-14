@@ -1034,6 +1034,11 @@ a {
   font-weight: 700;
 }
 
+.workspace-inline-link-danger {
+  background: rgba(234, 90, 99, 0.12);
+  color: #b5353d;
+}
+
 .list-card,
 .stacked-list,
 .transaction-list {
@@ -1073,6 +1078,14 @@ a {
 .stacked-list-meta,
 .product-highlight-meta {
   text-align: right;
+}
+
+.stacked-list-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
 .product-highlight-list {
