@@ -87,4 +87,9 @@ export const ordersService = {
     );
     return data;
   },
+
+  async deleteDriver(driverId: string) {
+    const { data } = await api.delete<{ id: string }>(`/orders/drivers/${driverId}`);
+    return data;
+  },
 };

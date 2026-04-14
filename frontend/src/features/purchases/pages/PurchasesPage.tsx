@@ -15,6 +15,7 @@ import {
 } from '../../../shared/utils/format';
 
 interface SupplierFormState {
+  id?: string;
   name: string;
   contactName: string;
   email: string;
@@ -64,6 +65,15 @@ export function PurchasesPage() {
   const [error, setError] = useState('');
   const [flashMessage, setFlashMessage] = useState('');
 
+  function resolveSelectionId(
+    items: Array<{ id: string }>,
+    currentId: string,
+  ) {
+    return items.some((item) => item.id === currentId)
+      ? currentId
+      : items[0]?.id || '';
+  }
+
   async function loadPageData() {
     const [supplierData, productData, purchaseData] = await Promise.all([
       inventoryService.listSuppliers(),
@@ -77,8 +87,8 @@ export function PurchasesPage() {
     setPurchases(purchaseData);
     setReceiveForm((current) => ({
       ...current,
-      supplierId: current.supplierId || supplierData[0]?.id || '',
-      productId: current.productId || productData[0]?.id || '',
+      supplierId: resolveSelectionId(supplierData, current.supplierId),
+      productId: resolveSelectionId(productData, current.productId),
     }));
   }
 
@@ -96,21 +106,64 @@ export function PurchasesPage() {
     });
   });
 
-  async function handleCreateSupplier(event: FormEvent) {
+  async function handleSaveSupplier(event: FormEvent) {
     event.preventDefault();
     setSaving(true);
     setError('');
     setFlashMessage('');
 
     try {
-      const supplier = await inventoryService.createSupplier(supplierForm);
+      let supplierId = supplierForm.id;
+
+      if (supplierForm.id) {
+        const supplier = await inventoryService.updateSupplier(supplierForm.id, {
+          name: supplierForm.name,
+          contactName: supplierForm.contactName || null,
+          email: supplierForm.email || null,
+          phone: supplierForm.phone || null,
+          address: supplierForm.address || null,
+        });
+        supplierId = supplier.id;
+        setFlashMessage('Supplier updated successfully.');
+      } else {
+        const supplier = await inventoryService.createSupplier(supplierForm);
+        supplierId = supplier.id;
+        setFlashMessage('Supplier created successfully.');
+      }
+
       await loadPageData();
       setSupplierForm(EMPTY_SUPPLIER_FORM);
-      setReceiveForm((current) => ({ ...current, supplierId: supplier.id }));
+      setReceiveForm((current) => ({
+        ...current,
+        supplierId: supplierId || current.supplierId,
+      }));
       setShowSupplierForm(false);
-      setFlashMessage('Supplier created successfully.');
     } catch (saveError) {
-      setError(getErrorMessage(saveError, 'Unable to create supplier.'));
+      setError(getErrorMessage(saveError, 'Unable to save supplier.'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteSupplier(supplier: Supplier) {
+    if (!window.confirm(`Delete ${supplier.name}?`)) {
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setFlashMessage('');
+
+    try {
+      await inventoryService.deleteSupplier(supplier.id);
+      if (supplierForm.id === supplier.id) {
+        setSupplierForm(EMPTY_SUPPLIER_FORM);
+        setShowSupplierForm(false);
+      }
+      await loadPageData();
+      setFlashMessage('Supplier deleted successfully.');
+    } catch (deleteError) {
+      setError(getErrorMessage(deleteError, 'Unable to delete supplier.'));
     } finally {
       setSaving(false);
     }
@@ -177,7 +230,7 @@ export function PurchasesPage() {
           className="workspace-primary-action"
           onClick={() => setShowSupplierForm((current) => !current)}
         >
-          {showSupplierForm ? 'Close Supplier Form' : 'Add Supplier'}
+          {showSupplierForm ? 'Close Supplier Editor' : 'Add Supplier'}
         </button>
       }
     >
@@ -351,7 +404,7 @@ export function PurchasesPage() {
           </div>
 
           {showSupplierForm ? (
-            <form className="workspace-form-grid" onSubmit={handleCreateSupplier}>
+            <form className="workspace-form-grid" onSubmit={handleSaveSupplier}>
               <label className="workspace-field">
                 <span>Supplier Name</span>
                 <input
@@ -420,8 +473,27 @@ export function PurchasesPage() {
                 className="workspace-secondary-action workspace-field-span-two"
                 disabled={saving}
               >
-                {saving ? 'Saving supplier…' : 'Save Supplier'}
+                {saving
+                  ? supplierForm.id
+                    ? 'Saving supplier…'
+                    : 'Creating supplier…'
+                  : supplierForm.id
+                    ? 'Save Supplier'
+                    : 'Add Supplier'}
               </button>
+              {supplierForm.id ? (
+                <button
+                  type="button"
+                  className="workspace-inline-link workspace-field-span-two"
+                  disabled={saving}
+                  onClick={() => {
+                    setSupplierForm(EMPTY_SUPPLIER_FORM);
+                    setShowSupplierForm(false);
+                  }}
+                >
+                  Cancel edit
+                </button>
+              ) : null}
             </form>
           ) : (
             <div className="surface-empty">
@@ -431,11 +503,44 @@ export function PurchasesPage() {
           )}
 
           <div className="stacked-list">
-            {suppliers.slice(0, 5).map((supplier) => (
+            {suppliers.map((supplier) => (
               <div key={supplier.id} className="stacked-list-row">
                 <div>
                   <strong>{supplier.name}</strong>
-                  <span>{supplier.contactName || supplier.email || 'No contact set'}</span>
+                  <span>
+                    {supplier.contactName ||
+                      supplier.email ||
+                      supplier.phone ||
+                      'No contact set'}
+                  </span>
+                </div>
+                <div className="stacked-list-actions">
+                  <button
+                    type="button"
+                    className="workspace-inline-link"
+                    disabled={saving}
+                    onClick={() => {
+                      setSupplierForm({
+                        id: supplier.id,
+                        name: supplier.name,
+                        contactName: supplier.contactName || '',
+                        email: supplier.email || '',
+                        phone: supplier.phone || '',
+                        address: supplier.address || '',
+                      });
+                      setShowSupplierForm(true);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="workspace-inline-link workspace-inline-link-danger"
+                    disabled={saving}
+                    onClick={() => void handleDeleteSupplier(supplier)}
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}

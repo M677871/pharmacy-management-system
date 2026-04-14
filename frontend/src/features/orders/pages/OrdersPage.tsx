@@ -40,6 +40,7 @@ const ORDER_STATUS_META: Record<
 };
 
 interface DriverFormState {
+  id?: string;
   name: string;
   phone: string;
   email: string;
@@ -97,6 +98,34 @@ export function OrdersPage() {
     () => drivers.filter((driver) => driver.isActive),
     [drivers],
   );
+
+  useEffect(() => {
+    setDrafts((current) => {
+      const fallbackDriverId = activeDrivers[0]?.id ?? '';
+      let changed = false;
+      const nextDrafts = Object.fromEntries(
+        Object.entries(current).map(([orderId, draft]) => {
+          if (
+            !draft.deliveryDriverId ||
+            activeDrivers.some((driver) => driver.id === draft.deliveryDriverId)
+          ) {
+            return [orderId, draft];
+          }
+
+          changed = true;
+          return [
+            orderId,
+            {
+              ...draft,
+              deliveryDriverId: fallbackDriverId,
+            },
+          ];
+        }),
+      );
+
+      return changed ? nextDrafts : current;
+    });
+  }, [activeDrivers]);
 
   const orderMetrics = useMemo(() => {
     return orders.reduce(
@@ -287,30 +316,47 @@ export function OrdersPage() {
 
   async function handleDriverSubmit(event: FormEvent) {
     event.preventDefault();
-    setBusyKey('driver:create');
+    setBusyKey(driverForm.id ? `driver:save:${driverForm.id}` : 'driver:create');
     setError('');
 
     try {
-      const createdDriver = await ordersService.createDriver({
+      const payload = {
         name: driverForm.name.trim(),
         phone: driverForm.phone.trim(),
         email: driverForm.email.trim() || undefined,
         vehicleDescription: driverForm.vehicleDescription.trim() || undefined,
         notes: driverForm.notes.trim() || undefined,
-      });
+      };
 
-      setDrivers((current) => [createdDriver, ...current]);
+      if (driverForm.id) {
+        const updatedDriver = await ordersService.updateDriver(driverForm.id, {
+          name: payload.name,
+          phone: payload.phone,
+          email: payload.email || null,
+          vehicleDescription: payload.vehicleDescription || null,
+          notes: payload.notes || null,
+        });
+
+        setDrivers((current) =>
+          current.map((item) => (item.id === updatedDriver.id ? updatedDriver : item)),
+        );
+        setFlashMessage(`${updatedDriver.name} details were updated.`);
+      } else {
+        const createdDriver = await ordersService.createDriver(payload);
+        setDrivers((current) => [createdDriver, ...current]);
+        setFlashMessage(`${createdDriver.name} is now available for delivery assignments.`);
+      }
+
       setDriverForm(EMPTY_DRIVER_FORM);
-      setFlashMessage(`${createdDriver.name} is now available for delivery assignments.`);
     } catch (submitError) {
-      setError(getErrorMessage(submitError, 'Unable to create the delivery driver.'));
+      setError(getErrorMessage(submitError, 'Unable to save the delivery driver.'));
     } finally {
       setBusyKey('');
     }
   }
 
   async function handleDriverToggle(driver: DeliveryDriver) {
-    setBusyKey(`driver:${driver.id}`);
+    setBusyKey(`driver:toggle:${driver.id}`);
     setError('');
 
     try {
@@ -326,6 +372,28 @@ export function OrdersPage() {
       );
     } catch (toggleError) {
       setError(getErrorMessage(toggleError, 'Unable to update the driver.'));
+    } finally {
+      setBusyKey('');
+    }
+  }
+
+  async function handleDeleteDriver(driver: DeliveryDriver) {
+    if (!window.confirm(`Delete ${driver.name}?`)) {
+      return;
+    }
+
+    setBusyKey(`driver:delete:${driver.id}`);
+    setError('');
+
+    try {
+      await ordersService.deleteDriver(driver.id);
+      setDrivers((current) => current.filter((item) => item.id !== driver.id));
+      if (driverForm.id === driver.id) {
+        setDriverForm(EMPTY_DRIVER_FORM);
+      }
+      setFlashMessage(`${driver.name} was deleted from the registry.`);
+    } catch (deleteError) {
+      setError(getErrorMessage(deleteError, 'Unable to delete the driver.'));
     } finally {
       setBusyKey('');
     }
@@ -656,7 +724,7 @@ export function OrdersPage() {
               <div className="surface-card-header compact">
                 <div>
                   <span className="surface-card-eyebrow">Driver Registry</span>
-                  <h2>Pre-register delivery drivers</h2>
+                  <h2>{driverForm.id ? 'Edit delivery driver' : 'Pre-register delivery drivers'}</h2>
                 </div>
               </div>
 
@@ -730,10 +798,28 @@ export function OrdersPage() {
                 <button
                   type="submit"
                   className="workspace-primary-action"
-                  disabled={busyKey === 'driver:create'}
+                  disabled={
+                    busyKey === 'driver:create' ||
+                    busyKey === `driver:save:${driverForm.id}`
+                  }
                 >
-                  Add delivery driver
+                  {busyKey === `driver:save:${driverForm.id}`
+                    ? 'Saving driver…'
+                    : busyKey === 'driver:create'
+                      ? 'Adding driver…'
+                      : driverForm.id
+                        ? 'Save delivery driver'
+                        : 'Add delivery driver'}
                 </button>
+                {driverForm.id ? (
+                  <button
+                    type="button"
+                    className="workspace-inline-link"
+                    onClick={() => setDriverForm(EMPTY_DRIVER_FORM)}
+                  >
+                    Cancel edit
+                  </button>
+                ) : null}
               </form>
 
               <div className="surface-divider" />
@@ -751,14 +837,53 @@ export function OrdersPage() {
                             : ''}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        className="workspace-secondary-action"
-                        disabled={busyKey === `driver:${driver.id}`}
-                        onClick={() => void handleDriverToggle(driver)}
-                      >
-                        {driver.isActive ? 'Set inactive' : 'Set active'}
-                      </button>
+                      <div className="stacked-list-actions">
+                        <button
+                          type="button"
+                          className="workspace-inline-link"
+                          disabled={
+                            busyKey === `driver:save:${driver.id}` ||
+                            busyKey === `driver:toggle:${driver.id}` ||
+                            busyKey === `driver:delete:${driver.id}`
+                          }
+                          onClick={() =>
+                            setDriverForm({
+                              id: driver.id,
+                              name: driver.name,
+                              phone: driver.phone,
+                              email: driver.email || '',
+                              vehicleDescription: driver.vehicleDescription || '',
+                              notes: driver.notes || '',
+                            })
+                          }
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="workspace-inline-link"
+                          disabled={
+                            busyKey === `driver:save:${driver.id}` ||
+                            busyKey === `driver:toggle:${driver.id}` ||
+                            busyKey === `driver:delete:${driver.id}`
+                          }
+                          onClick={() => void handleDriverToggle(driver)}
+                        >
+                          {driver.isActive ? 'Set inactive' : 'Set active'}
+                        </button>
+                        <button
+                          type="button"
+                          className="workspace-inline-link workspace-inline-link-danger"
+                          disabled={
+                            busyKey === `driver:save:${driver.id}` ||
+                            busyKey === `driver:toggle:${driver.id}` ||
+                            busyKey === `driver:delete:${driver.id}`
+                          }
+                          onClick={() => void handleDeleteDriver(driver)}
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
