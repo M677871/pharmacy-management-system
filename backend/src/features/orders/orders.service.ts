@@ -620,6 +620,29 @@ export class OrdersService {
     return this.toDeliveryDriverPayload(savedDriver);
   }
 
+  async removeDeliveryDriver(driverId: string) {
+    const driver = await this.deliveryDriversRepository.findOne({
+      where: { id: driverId },
+    });
+
+    if (!driver) {
+      throw new NotFoundException('Delivery driver not found.');
+    }
+
+    const linkedOrders = await this.ordersRepository.count({
+      where: { deliveryDriverId: driverId },
+    });
+
+    if (linkedOrders > 0) {
+      throw new ConflictException(
+        'Delivery driver cannot be deleted while related orders still exist.',
+      );
+    }
+
+    await this.deliveryDriversRepository.remove(driver);
+    return { id: driverId };
+  }
+
   async assignPendingOrders() {
     const onlineEmployeeIds = this.presenceService.getOnlineUserIdsByRole(
       UserRole.EMPLOYEE,
