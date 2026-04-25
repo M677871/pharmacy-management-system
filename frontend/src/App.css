@@ -552,6 +552,10 @@ a {
 }
 
 .workspace-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
     linear-gradient(160deg, #1656b0 0%, #0a3d88 58%, #0b2f67 100%);
@@ -726,6 +730,7 @@ a {
   display: flex;
   align-items: center;
   gap: 0.95rem;
+  position: relative;
 }
 
 .workspace-topbar-right > .workspace-primary-action,
@@ -1569,10 +1574,13 @@ a {
 .detail-block,
 .security-status-card,
 .detail-card {
-  padding: 1rem;
-  border-radius: 18px;
+  padding: 1.15rem 1.25rem;
+  border-radius: 12px;
   background: var(--surface-alt);
   border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 .security-status-card,
@@ -3364,6 +3372,8 @@ a {
   .workspace-sidebar {
     position: sticky;
     top: 0;
+    height: auto;
+    overflow-y: visible;
     z-index: 4;
     flex-direction: row;
     align-items: center;
@@ -4208,4 +4218,798 @@ a {
 .messages-counter-pill {
   background: rgba(255,255,255,0.08) !important;
   color: rgba(255,255,255,0.8) !important;
+}
+
+.messages-thread-call-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.messages-thread-call-button,
+.rtc-icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: 14px;
+  border: 1px solid rgba(27, 102, 209, 0.12);
+  background: rgba(27, 102, 209, 0.08);
+  color: var(--primary-ink);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.workspace-notification-drawer {
+  position: absolute;
+  top: calc(100% + 0.85rem);
+  right: 4.25rem;
+  z-index: 40;
+  width: min(430px, calc(100vw - 2rem));
+  padding: 0.9rem;
+  border-radius: 22px;
+  border: 1px solid rgba(217, 226, 240, 0.96);
+  background: rgba(255, 255, 255, 0.98);
+  color: var(--text);
+  box-shadow: 0 24px 60px rgba(10, 31, 68, 0.22);
+}
+
+.workspace-notification-header,
+.workspace-notification-footer,
+.workspace-notification-title,
+.notification-row-header,
+.notification-row-meta,
+.notification-row-actions,
+.notification-center-toolbar,
+.notification-filter-tabs,
+.notification-metrics {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.workspace-notification-header,
+.workspace-notification-footer,
+.notification-center-toolbar {
+  justify-content: space-between;
+}
+
+.workspace-notification-header {
+  padding: 0.25rem 0.2rem 0.8rem;
+  border-bottom: 1px solid rgba(217, 226, 240, 0.86);
+}
+
+.workspace-notification-header strong {
+  display: block;
+  margin-top: 0.18rem;
+  color: var(--primary-ink);
+  font-size: 1rem;
+}
+
+.notification-connection {
+  padding: 0.4rem 0.62rem;
+  border-radius: 999px;
+  background: rgba(50, 179, 107, 0.12);
+  color: #21764a;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.notification-connection.disconnected,
+.notification-connection.connecting {
+  background: rgba(240, 138, 54, 0.14);
+  color: #96531e;
+}
+
+.workspace-notification-list {
+  display: grid;
+  gap: 0.62rem;
+  max-height: 410px;
+  overflow: auto;
+  padding: 0.75rem 0.05rem;
+}
+
+.workspace-notification-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 2.35rem minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.78rem;
+  border-radius: 18px;
+  border: 1px solid rgba(217, 226, 240, 0.9);
+  background: #fff;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.workspace-notification-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(27, 102, 209, 0.22);
+  box-shadow: 0 12px 26px rgba(16, 37, 74, 0.08);
+}
+
+.workspace-notification-item.unread {
+  border-color: rgba(27, 102, 209, 0.22);
+  background: linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%);
+}
+
+.workspace-notification-icon,
+.notification-row-icon {
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(27, 102, 209, 0.1);
+  color: var(--primary-ink);
+  font-weight: 900;
+}
+
+.workspace-notification-icon {
+  width: 2.35rem;
+  height: 2.35rem;
+}
+
+.workspace-notification-title {
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.workspace-notification-title > div {
+  min-width: 0;
+}
+
+.workspace-notification-title strong,
+.notification-row-header strong {
+  display: block;
+  color: var(--primary-ink);
+  overflow-wrap: anywhere;
+}
+
+.workspace-notification-title span,
+.notification-row-header span,
+.notification-row-meta span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.workspace-notification-title small {
+  flex: none;
+  padding: 0.22rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(16, 37, 74, 0.06);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.workspace-notification-item p {
+  grid-column: 2;
+  margin: -0.25rem 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.workspace-notification-footer {
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(217, 226, 240, 0.86);
+}
+
+.workspace-notification-footer .workspace-primary-action {
+  width: auto;
+}
+
+.notification-critical .workspace-notification-icon,
+.notification-critical .notification-row-icon {
+  background: rgba(234, 90, 99, 0.12);
+  color: #b5353d;
+}
+
+.notification-warning .workspace-notification-icon,
+.notification-warning .notification-row-icon {
+  background: rgba(240, 138, 54, 0.14);
+  color: #96531e;
+}
+
+.notification-success .workspace-notification-icon,
+.notification-success .notification-row-icon {
+  background: rgba(50, 179, 107, 0.12);
+  color: #21764a;
+}
+
+.notification-center {
+  display: grid;
+  gap: 1rem;
+}
+
+.notification-metrics {
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.notification-metric-card {
+  min-height: 112px;
+  padding: 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(217, 226, 240, 0.9);
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.notification-metric-card.primary {
+  background: linear-gradient(135deg, rgba(27, 102, 209, 0.12), #fff);
+}
+
+.notification-metric-card.warning {
+  background: linear-gradient(135deg, rgba(240, 138, 54, 0.13), #fff);
+}
+
+.notification-metric-card span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.notification-metric-card strong {
+  display: block;
+  margin-top: 0.6rem;
+  color: var(--primary-ink);
+  font-size: 2rem;
+}
+
+.notification-center-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.notification-center-toolbar {
+  align-items: flex-start;
+  margin-bottom: 0.25rem;
+}
+
+.notification-center-toolbar h2 {
+  margin: 0.25rem 0 0;
+  color: var(--primary-ink);
+}
+
+.notification-filter-tabs {
+  padding: 0.3rem;
+  border-radius: 16px;
+  background: var(--surface-alt);
+  flex-wrap: wrap;
+}
+
+.notification-filter-tabs button {
+  width: auto;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.notification-filter-tabs button.active {
+  background: #fff;
+  color: var(--primary-ink);
+  box-shadow: 0 8px 18px rgba(16, 37, 74, 0.08);
+}
+
+.notification-list-page {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.notification-row {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
+  gap: 0.9rem;
+  align-items: flex-start;
+  padding: 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(217, 226, 240, 0.92);
+  background: #fff;
+}
+
+.notification-row.unread {
+  border-color: rgba(27, 102, 209, 0.22);
+  box-shadow: inset 4px 0 0 var(--primary);
+}
+
+.notification-row-icon {
+  width: 3rem;
+  height: 3rem;
+}
+
+.notification-row-content {
+  min-width: 0;
+}
+
+.notification-row-header {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.notification-row-content p {
+  margin: 0.4rem 0 0;
+  color: var(--text);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.notification-row-meta {
+  margin-top: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.notification-row-meta span {
+  padding: 0.28rem 0.52rem;
+  border-radius: 999px;
+  background: rgba(16, 37, 74, 0.06);
+  font-weight: 800;
+}
+
+.notification-row-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.notification-row-actions .workspace-secondary-action,
+.notification-row-actions .workspace-inline-link {
+  width: auto;
+}
+
+.notification-empty-state {
+  min-height: 300px;
+  display: grid;
+  place-items: center;
+  justify-items: center;
+  gap: 0.55rem;
+  border: 1px dashed var(--line);
+  border-radius: 22px;
+  background: var(--surface-alt);
+  color: var(--muted);
+  text-align: center;
+}
+
+.notification-empty-icon {
+  width: 2.7rem;
+  height: 2.7rem;
+  color: var(--primary);
+}
+
+.notification-empty-state strong {
+  color: var(--primary-ink);
+  font-size: 1.05rem;
+}
+
+.messages-thread-call-button {
+  width: 2.35rem;
+  height: 2.35rem;
+}
+
+.messages-thread-call-button:disabled,
+.rtc-icon-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.rtc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(6, 18, 38, 0.64);
+}
+
+.rtc-modal {
+  width: min(920px, 100%);
+  max-height: min(760px, calc(100vh - 2rem));
+  overflow: auto;
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 24px;
+  background: #f8fbff;
+  border: 1px solid rgba(217, 226, 240, 0.9);
+  box-shadow: 0 28px 80px rgba(4, 16, 34, 0.3);
+}
+
+.rtc-modal-header,
+.meetings-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.85rem;
+}
+
+.rtc-modal-header h2 {
+  margin: 0.2rem 0 0;
+}
+
+.rtc-modal-header p,
+.meetings-muted {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  text-transform: capitalize;
+}
+
+.rtc-stage {
+  min-height: 0;
+  aspect-ratio: 16 / 9;
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #081936;
+  display: grid;
+  place-items: center;
+}
+
+.rtc-stage.voice {
+  aspect-ratio: 21 / 9;
+}
+
+.rtc-remote-video,
+.rtc-local-video,
+.meeting-video-stage video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #081936;
+}
+
+.rtc-local-video {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  width: min(220px, 35%);
+  height: auto;
+  aspect-ratio: 16 / 10;
+  border-radius: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.82);
+}
+
+.rtc-local-video.hidden {
+  display: none;
+}
+
+.rtc-voice-avatar {
+  display: grid;
+  justify-items: center;
+  gap: 0.8rem;
+  color: #fff;
+}
+
+.rtc-media-notice {
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(184, 134, 11, 0.28);
+  background: rgba(255, 248, 218, 0.82);
+  color: #6f4e00;
+  font-weight: 700;
+}
+
+.rtc-waiting-avatar {
+  text-align: center;
+  padding: 1rem;
+}
+
+.rtc-waiting-avatar span {
+  color: rgba(255, 255, 255, 0.72);
+  font-weight: 700;
+}
+
+.rtc-voice-icon {
+  width: 4rem;
+  height: 4rem;
+}
+
+.rtc-control-row,
+.rtc-control-grid,
+.meetings-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.rtc-control-row > *,
+.meetings-actions > * {
+  width: auto;
+}
+
+.rtc-control-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.rtc-icon-action {
+  min-height: 2.75rem;
+  padding: 0.62rem 0.72rem;
+}
+
+.rtc-language-field {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  color: var(--primary-ink);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.rtc-language-field input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+
+.rtc-captions {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 18px;
+  background: rgba(8, 25, 54, 0.88);
+  color: #fff;
+}
+
+.rtc-captions p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.rtc-caption-composer {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(217, 226, 240, 0.9);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.rtc-caption-composer > span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.rtc-caption-composer > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.6rem;
+}
+
+.rtc-caption-composer input {
+  min-width: 0;
+  width: 100%;
+  padding: 0.72rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+
+.meetings-dashboard-grid,
+.meetings-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  gap: 1rem;
+  align-items: start;
+}
+
+.meetings-list-column,
+.meetings-side-panel,
+.meeting-card-list,
+.meeting-note-list,
+.meeting-recording-list,
+.meeting-participant-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.meeting-staff-picker {
+  max-height: 230px;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  padding: 0.65rem;
+  border-radius: 16px;
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+}
+
+.meeting-staff-option {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 0.58rem 0.65rem;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--text);
+}
+
+.meeting-staff-option input {
+  width: 1rem;
+  height: 1rem;
+}
+
+.meeting-list-card,
+.meeting-participant-row,
+.meeting-note-item,
+.meeting-recording-link {
+  display: grid;
+  gap: 0.3rem;
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(217, 226, 240, 0.9);
+  background: #fff;
+  color: var(--text);
+  text-align: left;
+  text-decoration: none;
+}
+
+.meeting-list-card {
+  cursor: pointer;
+}
+
+.meeting-list-card.compact {
+  padding: 0.75rem 0.9rem;
+}
+
+.meeting-list-card span,
+.meeting-list-card p,
+.meeting-participant-row span,
+.meeting-note-item span {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.meetings-room-card {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.meeting-video-stage {
+  position: relative;
+  min-height: 0;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #081936;
+  display: grid;
+  place-items: center;
+}
+
+.meeting-stage-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 800;
+}
+
+.meeting-note-form {
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 0.8rem;
+}
+
+.meeting-note-form textarea {
+  width: 100%;
+  resize: vertical;
+  padding: 0.8rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface-alt);
+  color: var(--text);
+}
+
+.meeting-note-item p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.meeting-participant-row {
+  grid-template-columns: 1fr;
+}
+
+.meeting-participant-row > div {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.meeting-participant-row strong,
+.meeting-list-card strong {
+  overflow-wrap: anywhere;
+}
+
+.meetings-side-panel {
+  position: sticky;
+  top: 1rem;
+}
+
+@media (max-width: 1180px) {
+  .notification-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .meetings-dashboard-grid,
+  .meetings-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .meetings-side-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .workspace-notification-drawer {
+    right: 0;
+    width: calc(100vw - 2rem);
+  }
+
+  .notification-metrics,
+  .notification-row {
+    grid-template-columns: 1fr;
+  }
+
+  .notification-center-toolbar,
+  .notification-row-header,
+  .notification-row-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .notification-filter-tabs,
+  .notification-row-actions {
+    width: 100%;
+  }
+
+  .notification-filter-tabs button,
+  .notification-row-actions .workspace-secondary-action,
+  .notification-row-actions .workspace-inline-link {
+    flex: 1;
+  }
+
+  .meeting-staff-picker {
+    grid-template-columns: 1fr;
+  }
+
+  .rtc-stage,
+  .meeting-video-stage {
+    aspect-ratio: 4 / 3;
+  }
+
+  .rtc-caption-composer > div {
+    grid-template-columns: 1fr;
+  }
+
+  .rtc-modal-header,
+  .meetings-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rtc-control-row > *,
+  .meetings-actions > * {
+    width: 100%;
+  }
 }
