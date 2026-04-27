@@ -37,6 +37,9 @@ Defined in `backend/src/app.module.ts`:
 - `OrdersModule`
 - `RealtimeModule`
 - `MessagingModule`
+- `MediaModule`
+- `CallsModule`
+- `MeetingsModule`
 - `UsersModule`
 
 ## Request Lifecycle
@@ -63,6 +66,28 @@ Connection model:
   - `role:{role}`
 
 This enables targeted fan-out for personal and role-scoped events.
+
+Calls and meetings reuse this namespace for protected WebRTC signaling. The backend validates JWT identity, call participation, meeting membership, and staff-only meeting roles before relaying any signaling payload.
+
+## Communication Architecture
+
+One-to-one chat calls are separate from regular chat messages:
+
+- Call lifecycle, participants, recordings, and captions are owned by `backend/src/features/calls`.
+- Call signaling uses Socket.IO events and persists lifecycle state in PostgreSQL.
+- Recordings are uploaded by authenticated participants and served through protected download endpoints.
+
+Meetings are staff-only and live outside the chat UI:
+
+- Meeting lifecycle, participants, notes, recordings, and captions are owned by `backend/src/features/meetings`.
+- Only `admin` and `employee` users can access meeting APIs and frontend routes.
+- Meeting join and signaling require invited membership.
+
+Shared media services live under `backend/src/features/media`:
+
+- Private recording storage.
+- Transcript segment persistence.
+- Translation provider abstraction.
 
 ## Persistence Architecture
 

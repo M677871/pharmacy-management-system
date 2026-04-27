@@ -184,6 +184,46 @@ Base: `/api/messages`
 - GET `/threads/:contactId`
 - GET `/broadcasts`
 
+## Calls
+Controller: `backend/src/features/calls/calls.controller.ts`
+Base: `/api/calls`
+
+- GET `/`
+- POST `/`
+- GET `/:callId`
+- POST `/:callId/accept`
+- POST `/:callId/reject`
+- POST `/:callId/end`
+- POST `/:callId/fail`
+- GET `/:callId/recordings`
+- POST `/:callId/recordings`
+- GET `/recordings/:recordingId/download`
+- GET `/:callId/captions`
+- POST `/:callId/captions`
+
+## Meetings
+Controller: `backend/src/features/meetings/meetings.controller.ts`
+Base: `/api/meetings`
+
+All meeting routes require JWT auth and `admin` or `employee` role.
+
+- GET `/eligible-participants`
+- GET `/`
+- POST `/`
+- GET `/:meetingId`
+- POST `/:meetingId/join`
+- POST `/:meetingId/leave`
+- POST `/:meetingId/end`
+- POST `/:meetingId/cancel`
+- GET `/:meetingId/notes`
+- POST `/:meetingId/notes`
+- PATCH `/:meetingId/notes/:noteId`
+- GET `/:meetingId/recordings`
+- POST `/:meetingId/recordings`
+- GET `/recordings/:recordingId/download`
+- GET `/:meetingId/captions`
+- POST `/:meetingId/captions`
+
 ## Notifications
 Controller: `backend/src/features/notifications/notifications.controller.ts`
 Base: `/api/notifications`
@@ -207,6 +247,15 @@ Defined in `backend/src/features/realtime/realtime.events.ts`:
 - `chat.delete`
 - `chat.markThreadRead`
 - `broadcast.send`
+- `call.start`
+- `call.accept`
+- `call.reject`
+- `call.end`
+- `call.fail`
+- `call.signal`
+- `meeting.join`
+- `meeting.leave`
+- `meeting.signal`
 
 ### Server events
 Defined in `backend/src/features/realtime/realtime.events.ts`:
@@ -227,3 +276,15 @@ Defined in `backend/src/features/realtime/realtime.events.ts`:
 - `broadcast.created`
 - `order.created`
 - `order.updated`
+- `call.incoming`
+- `call.updated`
+- `call.lifecycle`
+- `call.signal`
+- `call.recording.created`
+- `meeting.updated`
+- `meeting.participant.updated`
+- `meeting.signal`
+- `meeting.note.created`
+- `meeting.note.updated`
+- `meeting.recording.created`
+- `caption.segment.created`
