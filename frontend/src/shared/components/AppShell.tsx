@@ -1,8 +1,14 @@
 import { useState, type ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/hooks/useAuth';
+import { CallSessionModal } from '../../features/calls/components/CallSessionModal';
 import { useRealtime } from '../../features/realtime/hooks/useRealtime';
-import { formatDate, formatRole } from '../utils/format';
+import {
+  getNotificationInitial,
+  getNotificationTargetPath,
+  getNotificationToneLabel,
+} from '../../features/notifications/utils/notification-ui';
+import { formatDateTime, formatRole } from '../utils/format';
 import {
   BellIcon,
   ChevronDownIcon,
@@ -29,6 +35,8 @@ export function AppShell({
   const { user, logout } = useAuth();
   const {
     connectionState,
+    activeCall,
+    dismissActiveCall,
     dismissToast,
     markAllNotificationsRead,
     markNotificationRead,
@@ -49,7 +57,7 @@ export function AppShell({
     `${user.firstName} ${user.lastName}`.trim() || user.email.split('@')[0];
   const visibleNotifications = notifications
     .filter((notification) => !notification.isResolved)
-    .slice(0, 6);
+    .slice(0, 5);
 
   return (
     <div className="workspace-shell">
@@ -76,6 +84,11 @@ export function AppShell({
               {item.to === '/messages' && unreadMessagingCount ? (
                 <span className="workspace-nav-badge" aria-label="Unread messages">
                   {unreadMessagingCount > 9 ? '9+' : unreadMessagingCount}
+                </span>
+              ) : null}
+              {item.to === '/notifications' && unreadNotificationCount ? (
+                <span className="workspace-nav-badge" aria-label="Unread notifications">
+                  {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
                 </span>
               ) : null}
             </NavLink>
@@ -140,18 +153,12 @@ export function AppShell({
               <div className="workspace-notification-drawer">
                 <div className="workspace-notification-header">
                   <div>
-                    <span className="surface-card-eyebrow">Live Notifications</span>
-                    <strong>{connectionState === 'connected' ? 'Connected' : 'Syncing'}</strong>
+                    <span className="surface-card-eyebrow">Notifications</span>
+                    <strong>{unreadNotificationCount} unread</strong>
                   </div>
-                  <button
-                    type="button"
-                    className="workspace-inline-link"
-                    onClick={() => {
-                      void markAllNotificationsRead();
-                    }}
-                  >
-                    Mark all read
-                  </button>
+                  <span className={`notification-connection ${connectionState}`}>
+                    {connectionState === 'connected' ? 'Live' : 'Syncing'}
+                  </span>
                 </div>
 
                 {visibleNotifications.length ? (
@@ -160,18 +167,31 @@ export function AppShell({
                       <button
                         key={notification.id}
                         type="button"
-                        className={`workspace-notification-item${
+                        className={`workspace-notification-item notification-${notification.severity}${
                           notification.isRead ? '' : ' unread'
                         }`}
                         onClick={() => {
                           if (!notification.isRead) {
                             void markNotificationRead(notification.id);
                           }
+
+                          const targetPath = getNotificationTargetPath(notification);
+                          if (targetPath) {
+                            navigate(targetPath);
+                          }
+
+                          setNotificationsOpen(false);
                         }}
                       >
+                        <span className="workspace-notification-icon">
+                          {getNotificationInitial(notification)}
+                        </span>
                         <div className="workspace-notification-title">
-                          <strong>{notification.title}</strong>
-                          <span>{formatDate(notification.createdAt)}</span>
+                          <div>
+                            <strong>{notification.title}</strong>
+                            <span>{formatDateTime(notification.createdAt)}</span>
+                          </div>
+                          <small>{getNotificationToneLabel(notification.severity)}</small>
                         </div>
                         <p>{notification.body}</p>
                       </button>
@@ -182,6 +202,28 @@ export function AppShell({
                     No live notifications yet.
                   </div>
                 )}
+                <div className="workspace-notification-footer">
+                  <button
+                    type="button"
+                    className="workspace-inline-link"
+                    onClick={() => {
+                      void markAllNotificationsRead();
+                    }}
+                    disabled={!unreadNotificationCount}
+                  >
+                    Mark all read
+                  </button>
+                  <button
+                    type="button"
+                    className="workspace-primary-action"
+                    onClick={() => {
+                      setNotificationsOpen(false);
+                      navigate('/notifications');
+                    }}
+                  >
+                    Open center
+                  </button>
+                </div>
               </div>
             ) : null}
             <button
@@ -219,6 +261,14 @@ export function AppShell({
             </button>
           ))}
         </div>
+      ) : null}
+
+      {activeCall ? (
+        <CallSessionModal
+          key={activeCall.id}
+          call={activeCall}
+          onClose={dismissActiveCall}
+        />
       ) : null}
     </div>
   );

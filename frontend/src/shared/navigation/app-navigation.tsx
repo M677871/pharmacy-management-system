@@ -2,8 +2,10 @@ import type { ReactNode } from 'react';
 import type { User } from '../../features/auth/types/auth.types';
 import {
   CatalogIcon,
+  CalendarIcon,
   DashboardIcon,
   DeliveryIcon,
+  BellIcon,
   InventoryIcon,
   MessageIcon,
   PurchasesIcon,
@@ -31,6 +33,18 @@ const navigationItems: NavigationItem[] = [
     to: '/messages',
     icon: <MessageIcon className="nav-icon" />,
     roles: ['admin', 'employee', 'customer'],
+  },
+  {
+    label: 'Notifications',
+    to: '/notifications',
+    icon: <BellIcon className="nav-icon" />,
+    roles: ['admin', 'employee', 'customer'],
+  },
+  {
+    label: 'Meetings',
+    to: '/meetings',
+    icon: <CalendarIcon className="nav-icon" />,
+    roles: ['admin', 'employee'],
   },
   {
     label: 'Inventory',

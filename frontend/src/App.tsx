@@ -13,6 +13,8 @@ import { ReportsPage } from './features/reports/pages/ReportsPage';
 import { SettingsPage } from './features/settings/pages/SettingsPage';
 import { CatalogPage } from './features/catalog/pages/CatalogPage';
 import { MessagesPage } from './features/messaging/pages/MessagesPage';
+import { MeetingsPage } from './features/meetings/pages/MeetingsPage';
+import { NotificationsPage } from './features/notifications/pages/NotificationsPage';
 import { OrdersPage } from './features/orders/pages/OrdersPage';
 import { ProtectedRoute } from './shared/components/ProtectedRoute';
 import { useAuth } from './features/auth/hooks/useAuth';
@@ -118,6 +120,30 @@ function App() {
         element={
           <ProtectedRoute>
             <MessagesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/meetings"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'employee']}>
+            <MeetingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/meetings/:meetingId"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'employee']}>
+            <MeetingsPage />
           </ProtectedRoute>
         }
       />

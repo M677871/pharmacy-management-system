@@ -124,6 +124,59 @@ export function MessageIcon(props: IconProps) {
   );
 }
 
+export function PhoneIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M6.5 4.5 9 4l2 4-1.7 1.2a12 12 0 0 0 5.5 5.5L16 13l4 2-.5 2.5c-.2.9-1 1.5-1.9 1.5A13.6 13.6 0 0 1 4 5.9c0-.9.6-1.7 1.5-1.9z" />
+    </IconBase>
+  );
+}
+
+export function VideoIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <rect x="4" y="7" width="11" height="10" rx="2" />
+      <path d="m15 10 5-3v10l-5-3z" />
+    </IconBase>
+  );
+}
+
+export function MicIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6" />
+    </IconBase>
+  );
+}
+
+export function CameraIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <path d="M4 8h3l1.5-2h7L17 8h3v11H4z" />
+      <circle cx="12" cy="13.5" r="3.2" />
+    </IconBase>
+  );
+}
+
+export function ScreenShareIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <rect x="3" y="5" width="18" height="12" rx="2" />
+      <path d="M12 17v4M8 21h8M12 13V8M9.5 10.5 12 8l2.5 2.5" />
+    </IconBase>
+  );
+}
+
+export function CalendarIcon(props: IconProps) {
+  return (
+    <IconBase {...props}>
+      <rect x="4" y="5" width="16" height="15" rx="2" />
+      <path d="M8 3v4M16 3v4M4 10h16M8 14h2M13 14h3M8 17h2" />
+    </IconBase>
+  );
+}
+
 export function ShieldIcon(props: IconProps) {
   return (
     <IconBase {...props}>
