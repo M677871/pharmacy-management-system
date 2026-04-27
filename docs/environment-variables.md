@@ -17,7 +17,10 @@ Database and ports:
 Cross-service URLs:
 
 - `FRONTEND_URL`
+- `ALLOWED_ORIGINS`
+- `FRONTEND_RESET_PASSWORD_URL`
 - `VITE_API_URL`
+- `VITE_SOCKET_URL`
 
 Backend runtime toggles:
 
@@ -48,6 +51,7 @@ Primary template: `backend/.env.example`
 Application:
 
 - `PORT`
+- `HOST`
 - `NODE_ENV`
 
 Database:
@@ -81,6 +85,7 @@ OAuth callbacks and credentials:
 Frontend callback/cors integration:
 
 - `FRONTEND_URL`
+- `ALLOWED_ORIGINS`
 - `FRONTEND_RESET_PASSWORD_URL`
 
 SMTP/mail:
@@ -100,6 +105,14 @@ Password reset:
 - `PASSWORD_RESET_OTP_MAX_ATTEMPTS`
 - `PASSWORD_RESET_EXPOSE_OTP`
 
+Realtime communication:
+
+- `RECORDINGS_STORAGE_DIR`
+- `MAX_RECORDING_UPLOAD_BYTES`
+- `TRANSLATION_PROVIDER`
+- `TRANSLATION_API_URL`
+- `TRANSLATION_API_KEY`
+
 ## Backend Test Variables
 Defined in `backend/.env.test`.
 
@@ -117,6 +130,7 @@ Consumed from runtime code (`frontend/src/shared/api/axios.ts`, `frontend/src/fe
 
 - `VITE_API_URL`
 - `VITE_SOCKET_URL`
+- `VITE_RTC_ICE_SERVERS`
 
 Observed frontend env file:
 
@@ -124,8 +138,22 @@ Observed frontend env file:
 
 Fallback behavior:
 
-- If `VITE_API_URL` is absent, default is `http://localhost:3000/api`.
+- If `VITE_API_URL` is absent, the frontend build/runtime fails with a clear configuration error.
 - If `VITE_SOCKET_URL` is absent, socket base is derived from API URL by removing `/api`.
+- `VITE_RTC_ICE_SERVERS` may contain a JSON array of WebRTC ICE server objects. Keep TURN credentials out of source and inject them through environment configuration.
+
+## Security Requirements
+
+- `ALLOWED_ORIGINS` and `FRONTEND_URL` must never contain `*`.
+- `DATABASE_SYNCHRONIZE` must be `false` in production.
+- `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` must be strong random values. Production startup rejects known placeholder values and short secrets.
+- Real `.env` files are ignored by Git. Keep secrets in deployment secret storage and only commit `.env.example` templates.
+- `compose.yaml` uses required-variable substitution for sensitive settings instead of insecure defaults.
+
+## Realtime Communication Notes
+
+- Recordings are stored as private server files under `RECORDINGS_STORAGE_DIR` and are downloaded only through authenticated API routes that re-check call or meeting membership.
+- `TRANSLATION_PROVIDER=none` disables translation gracefully. `generic-http` sends translation requests to `TRANSLATION_API_URL` with `TRANSLATION_API_KEY` as a bearer token and expects a JSON response with `translatedText`.
 
 ## Notes on Resolution
 

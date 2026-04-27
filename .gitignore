@@ -9,6 +9,7 @@ build/
 .env
 .env.*
 !.env.example
+!**/.env.example
 
 # Logs
 logs/
@@ -50,6 +51,7 @@ coverage/
 
 # Runtime data
 pids/
+storage/
 *.pid
 *.seed
 *.pid.lock

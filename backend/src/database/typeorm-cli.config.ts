@@ -21,6 +21,14 @@ import { CatalogOrder } from '../features/orders/entities/catalog-order.entity';
 import { CatalogOrderItem } from '../features/orders/entities/catalog-order-item.entity';
 import { CatalogOrderItemAllocation } from '../features/orders/entities/catalog-order-item-allocation.entity';
 import { DeliveryDriver } from '../features/orders/entities/delivery-driver.entity';
+import { CallParticipant } from '../features/calls/entities/call-participant.entity';
+import { CallRecording } from '../features/calls/entities/call-recording.entity';
+import { CallSession } from '../features/calls/entities/call-session.entity';
+import { TranscriptSegment } from '../features/media/entities/transcript-segment.entity';
+import { Meeting } from '../features/meetings/entities/meeting.entity';
+import { MeetingNote } from '../features/meetings/entities/meeting-note.entity';
+import { MeetingParticipant } from '../features/meetings/entities/meeting-participant.entity';
+import { MeetingRecording } from '../features/meetings/entities/meeting-recording.entity';
 
 function loadEnvFile() {
   const envFileName = process.env.NODE_ENV === 'test' ? '.env.test' : '.env';
@@ -54,13 +62,33 @@ function loadEnvFile() {
 
 loadEnvFile();
 
+function requireEnv(key: string) {
+  const value = process.env[key];
+
+  if (!value?.trim()) {
+    throw new Error(`${key} environment variable is required.`);
+  }
+
+  return value.trim();
+}
+
+function requireEnvNumber(key: string) {
+  const value = Number(requireEnv(key));
+
+  if (!Number.isFinite(value)) {
+    throw new Error(`${key} must be a valid number.`);
+  }
+
+  return value;
+}
+
 export default new DataSource({
   type: 'postgres',
-  host: process.env.DATABASE_HOST || 'localhost',
-  port: Number(process.env.DATABASE_PORT || 5432),
-  username: process.env.DATABASE_USER || 'postgres',
-  password: process.env.DATABASE_PASSWORD || 'postgres',
-  database: process.env.DATABASE_NAME || 'pharmacy',
+  host: requireEnv('DATABASE_HOST'),
+  port: requireEnvNumber('DATABASE_PORT'),
+  username: requireEnv('DATABASE_USER'),
+  password: requireEnv('DATABASE_PASSWORD'),
+  database: requireEnv('DATABASE_NAME'),
   synchronize: false,
   entities: [
     User,
@@ -83,6 +111,14 @@ export default new DataSource({
     CatalogOrder,
     CatalogOrderItem,
     CatalogOrderItemAllocation,
+    CallSession,
+    CallParticipant,
+    CallRecording,
+    TranscriptSegment,
+    Meeting,
+    MeetingParticipant,
+    MeetingNote,
+    MeetingRecording,
   ],
   migrations: [path.join(__dirname, 'migrations', '*.{js,ts}')],
 });

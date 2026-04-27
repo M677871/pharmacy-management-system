@@ -1,6 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import {
+  getRequiredNumber,
+  getRequiredString,
+  parseBooleanConfig,
+} from '../config/env';
 
 // Database configuration for NestJS TypeORM. Uses environment variables
 // configured in `.env` or `.env.test` to select the proper database.
@@ -11,20 +16,25 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        const synchronizeOverride = config.get<string>('DATABASE_SYNCHRONIZE');
+        const nodeEnv = getRequiredString(config, 'NODE_ENV');
+        const synchronize = parseBooleanConfig(
+          getRequiredString(config, 'DATABASE_SYNCHRONIZE'),
+          'DATABASE_SYNCHRONIZE',
+        );
+
+        if (nodeEnv === 'production' && synchronize) {
+          throw new Error('DATABASE_SYNCHRONIZE must be false in production.');
+        }
 
         return {
           type: 'postgres' as const,
-          host: config.get<string>('DATABASE_HOST', 'localhost'),
-          port: config.get<number>('DATABASE_PORT', 5432),
-          username: config.get<string>('DATABASE_USER', 'postgres'),
-          password: config.get<string>('DATABASE_PASSWORD', 'postgres'),
-          database: config.get<string>('DATABASE_NAME', 'pharmacy'),
+          host: getRequiredString(config, 'DATABASE_HOST'),
+          port: getRequiredNumber(config, 'DATABASE_PORT'),
+          username: getRequiredString(config, 'DATABASE_USER'),
+          password: getRequiredString(config, 'DATABASE_PASSWORD'),
+          database: getRequiredString(config, 'DATABASE_NAME'),
           autoLoadEntities: true,
-          synchronize:
-            synchronizeOverride !== undefined
-              ? synchronizeOverride === 'true'
-              : config.get<string>('NODE_ENV') !== 'production',
+          synchronize,
         };
       },
     }),
