@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { authenticator } from 'otplib';
 import * as QRCode from 'qrcode';
+import { getRequiredString } from '../../config/env';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
 import { RegisterDto } from './dto/register.dto';
@@ -44,7 +45,7 @@ export class AuthService {
       const tempToken = this.jwtService.sign(
         { sub: user.id, requiresTwoFactor: true },
         {
-          secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+          secret: getRequiredString(this.configService, 'JWT_ACCESS_SECRET'),
           expiresIn: '5m',
         },
       );
@@ -73,7 +74,7 @@ export class AuthService {
   decodeRefreshToken(token: string): { sub: string; email: string } {
     try {
       return this.jwtService.verify(token, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        secret: getRequiredString(this.configService, 'JWT_REFRESH_SECRET'),
       });
     } catch {
       throw new UnauthorizedException('Invalid refresh token');
@@ -128,7 +129,7 @@ export class AuthService {
     let payload: { sub: string; requiresTwoFactor?: boolean };
     try {
       payload = this.jwtService.verify(tempToken, {
-        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+        secret: getRequiredString(this.configService, 'JWT_ACCESS_SECRET'),
       });
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
@@ -219,12 +220,12 @@ export class AuthService {
     const payload = { sub: user.id, email: user.email, role: user.role };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-        expiresIn: this.configService.get<string>('JWT_ACCESS_EXPIRATION', '15m'),
+        secret: getRequiredString(this.configService, 'JWT_ACCESS_SECRET'),
+        expiresIn: getRequiredString(this.configService, 'JWT_ACCESS_EXPIRATION'),
       }),
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRATION', '7d'),
+        secret: getRequiredString(this.configService, 'JWT_REFRESH_SECRET'),
+        expiresIn: getRequiredString(this.configService, 'JWT_REFRESH_EXPIRATION'),
       }),
     ]);
     return { accessToken, refreshToken };

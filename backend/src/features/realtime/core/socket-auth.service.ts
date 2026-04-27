@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { getRequiredString } from '../../../config/env';
 import { User } from '../../users/entities/user.entity';
 
 interface SocketHandshakeLike {
@@ -29,7 +30,7 @@ export class SocketAuthService {
 
     const payload = await this.jwtService
       .verifyAsync<{ sub: string }>(token, {
-        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+        secret: getRequiredString(this.configService, 'JWT_ACCESS_SECRET'),
       })
       .catch(() => {
         throw new UnauthorizedException('Invalid socket access token.');

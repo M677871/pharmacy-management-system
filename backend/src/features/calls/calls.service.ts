@@ -25,6 +25,7 @@ import {
 } from '../notifications/entities/notification.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { RealtimeEmitterService } from '../realtime/core/realtime-emitter.service';
+import { PresenceService } from '../realtime/core/presence.service';
 import { RealtimeServerEvent } from '../realtime/realtime.events';
 import { RealtimeUserSummary } from '../realtime/realtime.types';
 import { User, UserRole } from '../users/entities/user.entity';
@@ -65,6 +66,7 @@ export class CallsService implements OnModuleDestroy {
     private readonly usersRepository: Repository<User>,
     private readonly notificationsService: NotificationsService,
     private readonly emitter: RealtimeEmitterService,
+    private readonly presenceService: PresenceService,
     private readonly recordingStorage: RecordingStorageService,
     private readonly translationService: TranslationService,
   ) {}
@@ -95,16 +97,20 @@ export class CallsService implements OnModuleDestroy {
       throw new ForbiddenException('You do not have access to call this user.');
     }
 
+    const recipientOnline = this.presenceService.isOnline(recipient.id);
+    const createdAt = new Date();
+    const finishedAt = recipientOnline ? null : createdAt;
+
     const call = await this.callsRepository.save(
       this.callsRepository.create({
         type: dto.type,
-        status: CallStatus.RINGING,
+        status: recipientOnline ? CallStatus.RINGING : CallStatus.MISSED,
         callerId: caller.id,
         receiverId: recipient.id,
         startedAt: null,
-        endedAt: null,
+        endedAt: finishedAt,
         durationSeconds: 0,
-        endedReason: null,
+        endedReason: recipientOnline ? null : 'missed',
       }),
     );
 
@@ -113,8 +119,8 @@ export class CallsService implements OnModuleDestroy {
         callId: call.id,
         userId: caller.id,
         role: CallParticipantRole.CALLER,
-        joinedAt: new Date(),
-        leftAt: null,
+        joinedAt: createdAt,
+        leftAt: finishedAt,
         microphoneMuted: false,
         cameraEnabled: dto.type === CallType.VIDEO,
       }),
@@ -131,6 +137,29 @@ export class CallsService implements OnModuleDestroy {
 
     const hydratedCall = await this.getCallEntityOrThrow(call.id);
     const payload = this.toCallPayload(hydratedCall);
+
+    if (!recipientOnline) {
+      this.emitCallUpdated(hydratedCall);
+      await this.notificationsService.createForUserIds(
+        [recipient.id],
+        {
+          type: NotificationType.SYSTEM,
+          severity: NotificationSeverity.WARNING,
+          title: 'Missed call',
+          body: `You missed a ${dto.type} call from ${this.getDisplayName(caller)} while offline.`,
+          metadata: {
+            callId: call.id,
+            callerId: caller.id,
+            callType: dto.type,
+            offline: true,
+          },
+          dedupeKey: `call:${call.id}:missed`,
+        },
+        { skipExistingUnresolved: false },
+      );
+      return payload;
+    }
+
     this.emitter.emitToUser(
       recipient.id,
       RealtimeServerEvent.CALL_INCOMING,
@@ -174,6 +203,38 @@ export class CallsService implements OnModuleDestroy {
     });
 
     return calls.map((call) => this.toCallPayload(call));
+  }
+
+  async markRingingCallsFinishedForOfflineUser(userId: string) {
+    const receiverCalls = await this.callsRepository.find({
+      where: { receiverId: userId, status: CallStatus.RINGING },
+      relations: {
+        caller: true,
+        receiver: true,
+        participants: {
+          user: true,
+        },
+      },
+    });
+
+    const callerCalls = await this.callsRepository.find({
+      where: { callerId: userId, status: CallStatus.RINGING },
+      relations: {
+        caller: true,
+        receiver: true,
+        participants: {
+          user: true,
+        },
+      },
+    });
+
+    for (const call of receiverCalls) {
+      await this.finishCall(call, CallStatus.MISSED, 'missed', userId);
+    }
+
+    for (const call of callerCalls) {
+      await this.finishCall(call, CallStatus.ENDED, 'ended', userId);
+    }
   }
 
   async getMine(user: User, callId: string) {
@@ -238,12 +299,7 @@ export class CallsService implements OnModuleDestroy {
       return this.toCallPayload(call);
     }
 
-    const nextStatus =
-      call.status === CallStatus.RINGING && user.id === call.callerId
-        ? CallStatus.MISSED
-        : CallStatus.ENDED;
-
-    await this.finishCall(call, nextStatus, 'ended', user.id);
+    await this.finishCall(call, CallStatus.ENDED, 'ended', user.id);
     return this.toCallPayload(await this.getCallEntityOrThrow(callId));
   }
 

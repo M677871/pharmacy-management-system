@@ -11,6 +11,11 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { buildSocketCorsOptions } from '../../config/env';
+import { CallIdDto } from '../calls/dto/call-id.dto';
+import { CallSignalDto } from '../calls/dto/call-signal.dto';
+import { StartCallDto } from '../calls/dto/start-call.dto';
+import { CallsService } from '../calls/calls.service';
 import { BroadcastsService } from '../messaging/broadcasts.service';
 import { DeleteDirectMessageDto } from '../messaging/dto/delete-direct-message.dto';
 import { MarkThreadReadDto } from '../messaging/dto/mark-thread-read.dto';
@@ -18,6 +23,9 @@ import { SendBroadcastDto } from '../messaging/dto/send-broadcast.dto';
 import { SendDirectMessageDto } from '../messaging/dto/send-direct-message.dto';
 import { UpdateDirectMessageDto } from '../messaging/dto/update-direct-message.dto';
 import { ChatService } from '../messaging/chat.service';
+import { MeetingIdDto } from '../meetings/dto/meeting-id.dto';
+import { MeetingSignalDto } from '../meetings/dto/meeting-signal.dto';
+import { MeetingsService } from '../meetings/meetings.service';
 import { MarkNotificationReadDto } from '../notifications/dto/mark-notification-read.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { OrdersService } from '../orders/orders.service';
@@ -35,10 +43,7 @@ import {
 
 @WebSocketGateway({
   namespace: REALTIME_NAMESPACE,
-  cors: {
-    origin: true,
-    credentials: true,
-  },
+  cors: buildSocketCorsOptions(),
 })
 @UsePipes(
   new ValidationPipe({
@@ -61,6 +66,8 @@ export class RealtimeGateway
     private readonly chatService: ChatService,
     private readonly broadcastsService: BroadcastsService,
     private readonly ordersService: OrdersService,
+    private readonly callsService: CallsService,
+    private readonly meetingsService: MeetingsService,
   ) {}
 
   afterInit(server: Server) {
@@ -103,7 +110,16 @@ export class RealtimeGateway
   }
 
   handleDisconnect(client: Socket) {
+    const user = client.data.user as User | undefined;
     this.presenceService.unregisterConnection(client.id);
+
+    if (user && !this.presenceService.isOnline(user.id)) {
+      void this.callsService
+        .markRingingCallsFinishedForOfflineUser(user.id)
+        .catch(() => {
+          return;
+        });
+    }
   }
 
   @SubscribeMessage(RealtimeClientEvent.PRESENCE_PING)
@@ -186,6 +202,96 @@ export class RealtimeGateway
     const user = this.getSocketUser(client);
     this.presenceService.markActive(user.id);
     return this.broadcastsService.createAndDispatch(user, dto);
+  }
+
+  @SubscribeMessage(RealtimeClientEvent.CALL_START)
+  async startCall(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() dto: StartCallDto,
+  ) {
+    const user = this.getSocketUser(client);
+    this.presenceService.markActive(user.id);
+    return this.callsService.startCall(user, dto);
+  }
+
+  @SubscribeMessage(RealtimeClientEvent.CALL_ACCEPT)
+  async acceptCall(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() dto: CallIdDto,
+  ) {
+    const user = this.getSocketUser(client);
+    this.presenceService.markActive(user.id);
+    return this.callsService.acceptCall(user, dto.callId);
+  }
+
+  @SubscribeMessage(RealtimeClientEvent.CALL_REJECT)
+  async rejectCall(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() dto: CallIdDto,
+  ) {
+    const user = this.getSocketUser(client);
+    this.presenceService.markActive(user.id);
+    return this.callsService.rejectCall(user, dto.callId);
+  }
+
+  @SubscribeMessage(RealtimeClientEvent.CALL_END)
+  async endCall(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() dto: CallIdDto,
+  ) {
+    const user = this.getSocketUser(client);
+    this.presenceService.markActive(user.id);
+    return this.callsService.endCall(user, dto.callId);
+  }
+
+  @SubscribeMessage(RealtimeClientEvent.CALL_FAIL)
+  async failCall(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() dto: CallIdDto,
+  ) {
+    const user = this.getSocketUser(client);
+    this.presenceService.markActive(user.id);
+    return this.callsService.failCall(user, dto.callId);
+  }
+
+  @SubscribeMessage(RealtimeClientEvent.CALL_SIGNAL)
+  async relayCallSignal(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() dto: CallSignalDto,
+  ) {
+    const user = this.getSocketUser(client);
+    this.presenceService.markActive(user.id);
+    return this.callsService.relaySignal(user, dto);
+  }
+
+  @SubscribeMessage(RealtimeClientEvent.MEETING_JOIN)
+  async joinMeeting(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() dto: MeetingIdDto,
+  ) {
+    const user = this.getSocketUser(client);
+    this.presenceService.markActive(user.id);
+    return this.meetingsService.joinMeeting(user, dto.meetingId);
+  }
+
+  @SubscribeMessage(RealtimeClientEvent.MEETING_LEAVE)
+  async leaveMeeting(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() dto: MeetingIdDto,
+  ) {
+    const user = this.getSocketUser(client);
+    this.presenceService.markActive(user.id);
+    return this.meetingsService.leaveMeeting(user, dto.meetingId);
+  }
+
+  @SubscribeMessage(RealtimeClientEvent.MEETING_SIGNAL)
+  async relayMeetingSignal(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() dto: MeetingSignalDto,
+  ) {
+    const user = this.getSocketUser(client);
+    this.presenceService.markActive(user.id);
+    return this.meetingsService.relaySignal(user, dto);
   }
 
   private getSocketUser(client: Socket) {

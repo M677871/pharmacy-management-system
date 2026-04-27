@@ -9,8 +9,8 @@ export class InstagramStrategy extends PassportStrategy(Strategy, 'instagram') {
     super({
       authorizationURL: 'https://api.instagram.com/oauth/authorize',
       tokenURL: 'https://api.instagram.com/oauth/access_token',
-      clientID: configService.get<string>('INSTAGRAM_CLIENT_ID', 'not-configured'),
-      clientSecret: configService.get<string>('INSTAGRAM_CLIENT_SECRET', 'not-configured'),
+      clientID: configService.get<string>('INSTAGRAM_CLIENT_ID') ?? '',
+      clientSecret: configService.get<string>('INSTAGRAM_CLIENT_SECRET') ?? '',
       callbackURL: configService.get<string>('INSTAGRAM_CALLBACK_URL'),
       scope: ['user_profile'],
     });

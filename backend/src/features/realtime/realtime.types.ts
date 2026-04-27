@@ -126,6 +126,145 @@ export interface BroadcastPayload {
   createdAt: string;
 }
 
+export type CallTypeValue = 'voice' | 'video';
+export type CallStatusValue =
+  | 'ringing'
+  | 'connecting'
+  | 'active'
+  | 'ended'
+  | 'missed'
+  | 'rejected'
+  | 'failed';
+
+export interface CallParticipantPayload {
+  id: string;
+  callId: string;
+  userId: string;
+  role: 'caller' | 'receiver';
+  joinedAt: string | null;
+  leftAt: string | null;
+  microphoneMuted: boolean;
+  cameraEnabled: boolean;
+  user: RealtimeUserSummary;
+}
+
+export interface CallSessionPayload {
+  id: string;
+  type: CallTypeValue;
+  status: CallStatusValue;
+  callerId: string;
+  receiverId: string;
+  startedAt: string | null;
+  endedAt: string | null;
+  durationSeconds: number;
+  endedReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  caller: RealtimeUserSummary;
+  receiver: RealtimeUserSummary;
+  participants: CallParticipantPayload[];
+}
+
+export interface CallLifecyclePayload {
+  callId: string;
+  status: CallStatusValue;
+  reason: 'accepted' | 'rejected' | 'ended' | 'missed' | 'failed';
+  occurredAt: string;
+}
+
+export interface RtcSignalPayload {
+  callId?: string;
+  meetingId?: string;
+  fromUserId: string;
+  targetUserId?: string | null;
+  type:
+    | 'offer'
+    | 'answer'
+    | 'ice-candidate'
+    | 'screen-share-started'
+    | 'screen-share-stopped';
+  payload: Record<string, unknown>;
+  clientRequestId: string | null;
+  occurredAt: string;
+}
+
+export interface RecordingPayload {
+  id: string;
+  callId?: string;
+  meetingId?: string;
+  createdById: string;
+  startedAt: string;
+  endedAt: string;
+  durationSeconds: number;
+  mimeType: string | null;
+  sizeBytes: number;
+  hasFile: boolean;
+  downloadUrl: string | null;
+  createdAt: string;
+}
+
+export type MeetingStateValue = 'scheduled' | 'live' | 'ended' | 'cancelled';
+
+export interface MeetingParticipantPayload {
+  id: string;
+  meetingId: string;
+  userId: string;
+  role: 'host' | 'invitee';
+  status: 'invited' | 'accepted' | 'declined' | 'joined' | 'left';
+  joinedAt: string | null;
+  leftAt: string | null;
+  user: RealtimeUserSummary;
+}
+
+export interface MeetingPayload {
+  id: string;
+  title: string;
+  agenda: string | null;
+  scheduledStartAt: string;
+  durationMinutes: number;
+  state: MeetingStateValue;
+  hostId: string;
+  startedAt: string | null;
+  endedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  joinPath: string;
+  host: RealtimeUserSummary;
+  participants: MeetingParticipantPayload[];
+}
+
+export interface MeetingParticipantUpdatedPayload {
+  meetingId: string;
+  user: RealtimeUserSummary;
+  action: 'joined' | 'left';
+  occurredAt: string;
+}
+
+export interface MeetingNotePayload {
+  id: string;
+  meetingId: string;
+  authorId: string;
+  author: RealtimeUserSummary;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TranscriptSegmentPayload {
+  id: string;
+  sessionType: 'call' | 'meeting';
+  sessionId: string;
+  authorId: string;
+  author: RealtimeUserSummary;
+  text: string;
+  sourceLanguage: string | null;
+  targetLanguage: string | null;
+  translatedText: string | null;
+  translationStatus: 'not_requested' | 'translated' | 'disabled' | 'failed';
+  translationProvider: string | null;
+  createdAt: string;
+}
+
 export type OrderStatusValue =
   | 'pending_assignment'
   | 'pending_review'

@@ -24,6 +24,18 @@ export enum RealtimeServerEvent {
   BROADCAST_CREATED = 'broadcast.created',
   ORDER_CREATED = 'order.created',
   ORDER_UPDATED = 'order.updated',
+  CALL_INCOMING = 'call.incoming',
+  CALL_UPDATED = 'call.updated',
+  CALL_LIFECYCLE = 'call.lifecycle',
+  CALL_SIGNAL = 'call.signal',
+  CALL_RECORDING_CREATED = 'call.recording.created',
+  MEETING_UPDATED = 'meeting.updated',
+  MEETING_PARTICIPANT_UPDATED = 'meeting.participant.updated',
+  MEETING_SIGNAL = 'meeting.signal',
+  MEETING_NOTE_CREATED = 'meeting.note.created',
+  MEETING_NOTE_UPDATED = 'meeting.note.updated',
+  MEETING_RECORDING_CREATED = 'meeting.recording.created',
+  CAPTION_SEGMENT_CREATED = 'caption.segment.created',
 }
 
 export enum RealtimeClientEvent {
@@ -35,4 +47,13 @@ export enum RealtimeClientEvent {
   CHAT_DELETE = 'chat.delete',
   CHAT_MARK_THREAD_READ = 'chat.markThreadRead',
   BROADCAST_SEND = 'broadcast.send',
+  CALL_START = 'call.start',
+  CALL_ACCEPT = 'call.accept',
+  CALL_REJECT = 'call.reject',
+  CALL_END = 'call.end',
+  CALL_FAIL = 'call.fail',
+  CALL_SIGNAL = 'call.signal',
+  MEETING_JOIN = 'meeting.join',
+  MEETING_LEAVE = 'meeting.leave',
+  MEETING_SIGNAL = 'meeting.signal',
 }

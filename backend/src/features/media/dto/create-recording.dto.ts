@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import { IsDateString, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class CreateRecordingDto {
@@ -7,6 +8,7 @@ export class CreateRecordingDto {
   @IsDateString()
   endedAt!: string;
 
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   @Max(24 * 60 * 60)
