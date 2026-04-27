@@ -17,13 +17,16 @@ import {
   realtimeClientEvent,
   realtimeEvent,
   type BroadcastMessage,
+  type CallSession,
   type ChatThreadSummary,
   type ChatThreadReadPayload,
   type DirectMessage,
+  type Meeting,
   type NotificationItem,
   type NotificationsReadAllPayload,
   type OrderRecord,
   type PresenceEntry,
+  type RtcSignalEvent,
   type RealtimeEventMap,
   type RealtimeToast,
   type UserRole,
@@ -38,7 +41,10 @@ interface RealtimeContextValue {
   unreadMessagingCount: number;
   broadcasts: BroadcastMessage[];
   presenceByUserId: Record<string, PresenceEntry>;
+  activeCall: CallSession | null;
   toasts: RealtimeToast[];
+  setActiveCall: (call: CallSession | null) => void;
+  dismissActiveCall: () => void;
   dismissToast: (toastId: string) => void;
   refreshNotifications: () => Promise<void>;
   refreshBroadcasts: () => Promise<void>;
@@ -59,6 +65,29 @@ interface RealtimeContextValue {
     body: string;
     audienceRoles?: UserRole[];
   }) => Promise<BroadcastMessage>;
+  startCall: (payload: {
+    recipientId: string;
+    type: 'voice' | 'video';
+  }) => Promise<CallSession>;
+  acceptCall: (callId: string) => Promise<CallSession>;
+  rejectCall: (callId: string) => Promise<CallSession>;
+  endCall: (callId: string) => Promise<CallSession>;
+  failCall: (callId: string) => Promise<CallSession>;
+  sendCallSignal: (payload: {
+    callId: string;
+    type: RtcSignalEvent['type'];
+    payload: Record<string, unknown>;
+    clientRequestId?: string;
+  }) => Promise<{ ok: true }>;
+  joinMeeting: (meetingId: string) => Promise<Meeting>;
+  leaveMeeting: (meetingId: string) => Promise<Meeting>;
+  sendMeetingSignal: (payload: {
+    meetingId: string;
+    targetUserId?: string;
+    type: RtcSignalEvent['type'];
+    payload: Record<string, unknown>;
+    clientRequestId?: string;
+  }) => Promise<{ ok: true }>;
   subscribe: <TEvent extends keyof RealtimeEventMap>(
     event: TEvent,
     listener: (payload: RealtimeEventMap[TEvent]) => void,
@@ -161,6 +190,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
   const [presenceByUserId, setPresenceByUserId] = useState<
     Record<string, PresenceEntry>
   >({});
+  const [activeCall, setActiveCall] = useState<CallSession | null>(null);
   const [toasts, setToasts] = useState<RealtimeToast[]>([]);
 
   useEffect(() => {
@@ -169,6 +199,10 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
 
   const dismissToast = useCallback((toastId: string) => {
     setToasts((current) => current.filter((toast) => toast.id !== toastId));
+  }, []);
+
+  const dismissActiveCall = useCallback(() => {
+    setActiveCall(null);
   }, []);
 
   const queueToast = useCallback(
@@ -224,7 +258,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const items = await notificationsService.list();
+    const items = await notificationsService.list(50);
     setNotifications(items);
   }, [user]);
 
@@ -253,7 +287,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       const exists = current.some((item) => item.id === notification.id);
 
       if (!exists) {
-        return [notification, ...current].slice(0, 25);
+        return [notification, ...current].slice(0, 50);
       }
 
       return current.map((item) =>
@@ -272,6 +306,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
       setThreadUnreadCounts({});
       setUnreadBroadcastCount(0);
       setPresenceByUserId({});
+      setActiveCall(null);
       return;
     }
 
@@ -332,7 +367,7 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
           );
         }
 
-        return [notification, ...current].slice(0, 25);
+        return [notification, ...current].slice(0, 50);
       });
       emitLocal(realtimeEvent.notificationCreated, notification);
 
@@ -481,6 +516,80 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     });
     socket.on(realtimeEvent.orderUpdated, (payload: OrderRecord) => {
       emitLocal(realtimeEvent.orderUpdated, payload);
+    });
+    socket.on(realtimeEvent.callIncoming, (payload: CallSession) => {
+      emitLocal(realtimeEvent.callIncoming, payload);
+
+      if (payload.receiverId === currentUserIdRef.current) {
+        setActiveCall(payload);
+        queueToast(
+          createToast(
+            'info',
+            `Incoming ${payload.type} call`,
+            `${payload.caller.displayName} is calling you.`,
+          ),
+        );
+      }
+    });
+    socket.on(realtimeEvent.callUpdated, (payload: CallSession) => {
+      const isParticipant =
+        payload.callerId === currentUserIdRef.current ||
+        payload.receiverId === currentUserIdRef.current;
+
+      if (isParticipant) {
+        setActiveCall((current) => {
+          if (current?.id === payload.id) {
+            return payload;
+          }
+
+          if (
+            [
+              'ringing',
+              'connecting',
+              'active',
+              'missed',
+              'rejected',
+              'failed',
+            ].includes(payload.status)
+          ) {
+            return payload;
+          }
+
+          return current;
+        });
+      }
+
+      emitLocal(realtimeEvent.callUpdated, payload);
+    });
+    socket.on(realtimeEvent.callLifecycle, (payload) => {
+      emitLocal(realtimeEvent.callLifecycle, payload);
+    });
+    socket.on(realtimeEvent.callSignal, (payload) => {
+      emitLocal(realtimeEvent.callSignal, payload);
+    });
+    socket.on(realtimeEvent.callRecordingCreated, (payload) => {
+      emitLocal(realtimeEvent.callRecordingCreated, payload);
+    });
+    socket.on(realtimeEvent.meetingUpdated, (payload: Meeting) => {
+      emitLocal(realtimeEvent.meetingUpdated, payload);
+    });
+    socket.on(realtimeEvent.meetingParticipantUpdated, (payload) => {
+      emitLocal(realtimeEvent.meetingParticipantUpdated, payload);
+    });
+    socket.on(realtimeEvent.meetingSignal, (payload) => {
+      emitLocal(realtimeEvent.meetingSignal, payload);
+    });
+    socket.on(realtimeEvent.meetingNoteCreated, (payload) => {
+      emitLocal(realtimeEvent.meetingNoteCreated, payload);
+    });
+    socket.on(realtimeEvent.meetingNoteUpdated, (payload) => {
+      emitLocal(realtimeEvent.meetingNoteUpdated, payload);
+    });
+    socket.on(realtimeEvent.meetingRecordingCreated, (payload) => {
+      emitLocal(realtimeEvent.meetingRecordingCreated, payload);
+    });
+    socket.on(realtimeEvent.captionSegmentCreated, (payload) => {
+      emitLocal(realtimeEvent.captionSegmentCreated, payload);
     });
 
     socket.connect();
@@ -739,6 +848,162 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const startCall = useCallback(
+    async (payload: { recipientId: string; type: 'voice' | 'video' }) => {
+      const socket = socketRef.current;
+
+      if (!socket?.connected) {
+        throw new Error('Realtime connection unavailable.');
+      }
+
+      const call = await emitWithAck<CallSession, typeof payload>(
+        socket,
+        realtimeClientEvent.callStart,
+        payload,
+      );
+      setActiveCall(call);
+      return call;
+    },
+    [],
+  );
+
+  const acceptCall = useCallback(async (callId: string) => {
+    const socket = socketRef.current;
+
+    if (!socket?.connected) {
+      throw new Error('Realtime connection unavailable.');
+    }
+
+    const call = await emitWithAck<CallSession, { callId: string }>(
+      socket,
+      realtimeClientEvent.callAccept,
+      { callId },
+    );
+    setActiveCall(call);
+    return call;
+  }, []);
+
+  const rejectCall = useCallback(async (callId: string) => {
+    const socket = socketRef.current;
+
+    if (!socket?.connected) {
+      throw new Error('Realtime connection unavailable.');
+    }
+
+    const call = await emitWithAck<CallSession, { callId: string }>(
+      socket,
+      realtimeClientEvent.callReject,
+      { callId },
+    );
+    setActiveCall(call);
+    return call;
+  }, []);
+
+  const endCall = useCallback(async (callId: string) => {
+    const socket = socketRef.current;
+
+    if (!socket?.connected) {
+      throw new Error('Realtime connection unavailable.');
+    }
+
+    const call = await emitWithAck<CallSession, { callId: string }>(
+      socket,
+      realtimeClientEvent.callEnd,
+      { callId },
+    );
+    setActiveCall(call);
+    return call;
+  }, []);
+
+  const failCall = useCallback(async (callId: string) => {
+    const socket = socketRef.current;
+
+    if (!socket?.connected) {
+      throw new Error('Realtime connection unavailable.');
+    }
+
+    const call = await emitWithAck<CallSession, { callId: string }>(
+      socket,
+      realtimeClientEvent.callFail,
+      { callId },
+    );
+    setActiveCall(call);
+    return call;
+  }, []);
+
+  const sendCallSignal = useCallback(
+    async (payload: {
+      callId: string;
+      type: RtcSignalEvent['type'];
+      payload: Record<string, unknown>;
+      clientRequestId?: string;
+    }) => {
+      const socket = socketRef.current;
+
+      if (!socket?.connected) {
+        throw new Error('Realtime connection unavailable.');
+      }
+
+      return emitWithAck<{ ok: true }, typeof payload>(
+        socket,
+        realtimeClientEvent.callSignal,
+        payload,
+      );
+    },
+    [],
+  );
+
+  const joinMeeting = useCallback(async (meetingId: string) => {
+    const socket = socketRef.current;
+
+    if (!socket?.connected) {
+      throw new Error('Realtime connection unavailable.');
+    }
+
+    return emitWithAck<Meeting, { meetingId: string }>(
+      socket,
+      realtimeClientEvent.meetingJoin,
+      { meetingId },
+    );
+  }, []);
+
+  const leaveMeeting = useCallback(async (meetingId: string) => {
+    const socket = socketRef.current;
+
+    if (!socket?.connected) {
+      throw new Error('Realtime connection unavailable.');
+    }
+
+    return emitWithAck<Meeting, { meetingId: string }>(
+      socket,
+      realtimeClientEvent.meetingLeave,
+      { meetingId },
+    );
+  }, []);
+
+  const sendMeetingSignal = useCallback(
+    async (payload: {
+      meetingId: string;
+      targetUserId?: string;
+      type: RtcSignalEvent['type'];
+      payload: Record<string, unknown>;
+      clientRequestId?: string;
+    }) => {
+      const socket = socketRef.current;
+
+      if (!socket?.connected) {
+        throw new Error('Realtime connection unavailable.');
+      }
+
+      return emitWithAck<{ ok: true }, typeof payload>(
+        socket,
+        realtimeClientEvent.meetingSignal,
+        payload,
+      );
+    },
+    [],
+  );
+
   const unreadNotificationCount = notifications.filter(
     (notification) => !notification.isRead && !notification.isResolved,
   ).length;
@@ -755,7 +1020,10 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
         unreadMessagingCount,
         broadcasts,
         presenceByUserId,
+        activeCall,
         toasts,
+        setActiveCall,
+        dismissActiveCall,
         dismissToast,
         refreshNotifications,
         refreshBroadcasts,
@@ -766,6 +1034,15 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
         deleteDirectMessage,
         markThreadRead,
         sendBroadcast,
+        startCall,
+        acceptCall,
+        rejectCall,
+        endCall,
+        failCall,
+        sendCallSignal,
+        joinMeeting,
+        leaveMeeting,
+        sendMeetingSignal,
         subscribe,
       }}
     >

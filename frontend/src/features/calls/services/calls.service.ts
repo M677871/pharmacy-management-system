@@ -34,6 +34,7 @@ export const callsService = {
     text: string;
     sourceLanguage?: string;
     targetLanguage?: string;
+    source?: 'manual' | 'browser_speech';
   }) {
     const { data } = await api.post<CaptionSegment>(
       `/calls/${callId}/captions`,

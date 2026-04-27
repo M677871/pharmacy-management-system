@@ -23,6 +23,7 @@ export function MessagesPage() {
     handleDeleteMessage,
     handleSendBroadcast,
     handleSendMessage,
+    handleStartCall,
     isStaff,
     isEditingMessage,
     loadingBroadcasts,
@@ -106,6 +107,8 @@ export function MessagesPage() {
             onMessageBodyChange={setMessageBody}
             onSendMessage={handleSendMessage}
             onStartEditingMessage={startEditingMessage}
+            onStartVoiceCall={() => handleStartCall('voice')}
+            onStartVideoCall={() => handleStartCall('video')}
           />
 
           <MessagesDetailsRail

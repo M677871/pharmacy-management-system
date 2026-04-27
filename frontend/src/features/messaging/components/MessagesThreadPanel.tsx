@@ -1,5 +1,5 @@
 import { useEffect, useRef, type FormEvent, type KeyboardEvent } from 'react';
-import { MessageIcon } from '../../../shared/components/AppIcons';
+import { MessageIcon, PhoneIcon, VideoIcon } from '../../../shared/components/AppIcons';
 import { formatRole } from '../../../shared/utils/format';
 import type { DirectMessage, MessagingContact } from '../types/messaging.types';
 import type { MessageCluster, ConversationItem } from '../utils/message-ui';
@@ -26,6 +26,8 @@ interface MessagesThreadPanelProps {
   onStartEditingMessage: (message: DirectMessage) => void;
   onCancelEditingMessage: () => void;
   onDeleteMessage: (message: DirectMessage) => void | Promise<void>;
+  onStartVoiceCall: () => void | Promise<void>;
+  onStartVideoCall: () => void | Promise<void>;
 }
 
 function MessagesThreadSkeleton() {
@@ -66,12 +68,17 @@ export function MessagesThreadPanel({
   onMessageBodyChange,
   onSendMessage,
   onStartEditingMessage,
+  onStartVideoCall,
+  onStartVoiceCall,
 }: MessagesThreadPanelProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const lastOutgoingClusterId = [...messageClusters]
     .reverse()
     .find((cluster) => cluster.isOutgoing)?.id;
+  const contactOnline =
+    selectedPresence?.status === 'active' || selectedPresence?.status === 'online';
+  const callDisabled = !connectionReady || !contactOnline;
 
   useEffect(() => {
     const frameId = window.requestAnimationFrame(() => {
@@ -137,6 +144,30 @@ export function MessagesThreadPanel({
               <span className="messages-thread-header-role">{formatRole(selectedContact.role)}</span>
             </div>
           </div>
+        </div>
+        <div className="messages-thread-call-actions">
+          <button
+            type="button"
+            className="messages-thread-call-button"
+            onClick={() => {
+              void onStartVoiceCall();
+            }}
+            disabled={callDisabled}
+            title={contactOnline ? 'Start voice call' : 'Contact is offline'}
+          >
+            <PhoneIcon className="workspace-mini-icon" />
+          </button>
+          <button
+            type="button"
+            className="messages-thread-call-button"
+            onClick={() => {
+              void onStartVideoCall();
+            }}
+            disabled={callDisabled}
+            title={contactOnline ? 'Start video call' : 'Contact is offline'}
+          >
+            <VideoIcon className="workspace-mini-icon" />
+          </button>
         </div>
       </header>
 

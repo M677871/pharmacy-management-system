@@ -14,7 +14,11 @@ import { useRealtimeEvent } from '../../realtime/hooks/useRealtimeEvent';
 import { realtimeEvent } from '../../realtime/types/realtime.types';
 import { getErrorMessage } from '../../../shared/utils/format';
 import { messagesService } from '../services/messages.service';
-import type { ChatThreadSummary, DirectMessage, MessagingContact } from '../types/messaging.types';
+import type {
+  ChatThreadSummary,
+  DirectMessage,
+  MessagingContact,
+} from '../types/messaging.types';
 import {
   buildAvailabilityItems,
   buildConversationItems,
@@ -24,6 +28,14 @@ import {
 } from '../utils/message-ui';
 
 export type BroadcastAudience = 'all' | 'admins' | 'employees';
+
+function canIssueReadReceipt() {
+  if (typeof document === 'undefined') {
+    return true;
+  }
+
+  return document.visibilityState === 'visible' && document.hasFocus();
+}
 
 export function useMessagingWorkspace() {
   const { user } = useAuth();
@@ -36,6 +48,7 @@ export function useMessagingWorkspace() {
     refreshBroadcasts,
     sendBroadcast,
     sendDirectMessage,
+    startCall,
     updateDirectMessage,
   } = useRealtime();
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,6 +69,7 @@ export function useMessagingWorkspace() {
   const [loadingSidebar, setLoadingSidebar] = useState(true);
   const [refreshingSidebar, setRefreshingSidebar] = useState(false);
   const [loadingThread, setLoadingThread] = useState(false);
+  const [loadedThreadContactId, setLoadedThreadContactId] = useState('');
   const [loadingBroadcasts, setLoadingBroadcasts] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
@@ -64,12 +78,33 @@ export function useMessagingWorkspace() {
   const selectedContactIdRef = useRef('');
   const sidebarRequestRef = useRef(0);
   const threadRequestRef = useRef(0);
+  const readReceiptRequestRef = useRef('');
   const hasLoadedSidebarRef = useRef(false);
+  const [readReceiptViewActive, setReadReceiptViewActive] = useState(
+    canIssueReadReceipt,
+  );
   const isStaff = user?.role === 'admin' || user?.role === 'employee';
 
   useEffect(() => {
     selectedContactIdRef.current = selectedContactId;
   }, [selectedContactId]);
+
+  useEffect(() => {
+    const updateReadReceiptViewState = () => {
+      setReadReceiptViewActive(canIssueReadReceipt());
+    };
+
+    updateReadReceiptViewState();
+    document.addEventListener('visibilitychange', updateReadReceiptViewState);
+    window.addEventListener('focus', updateReadReceiptViewState);
+    window.addEventListener('blur', updateReadReceiptViewState);
+
+    return () => {
+      document.removeEventListener('visibilitychange', updateReadReceiptViewState);
+      window.removeEventListener('focus', updateReadReceiptViewState);
+      window.removeEventListener('blur', updateReadReceiptViewState);
+    };
+  }, []);
 
   const conversationItems = useMemo(
     () => {
@@ -178,6 +213,100 @@ export function useMessagingWorkspace() {
     );
   }
 
+  function applyMessageCreated(message: DirectMessage) {
+    if (!user) {
+      return;
+    }
+
+    const contact = message.senderId === user.id ? message.recipient : message.sender;
+    const isOpenThread = selectedContactIdRef.current === contact.id;
+
+    setContacts((current) => {
+      if (current.some((item) => item.id === contact.id)) {
+        return current;
+      }
+
+      return [contact, ...current];
+    });
+
+    setThreadSummaries((current) => {
+      const existingSummary = current.find(
+        (summary) => summary.contact.id === contact.id,
+      );
+
+      if (existingSummary?.lastMessage.id === message.id) {
+        return current;
+      }
+
+      const isUnreadIncomingMessage =
+        message.recipientId === user.id && message.senderId !== user.id;
+      const unreadCount = isUnreadIncomingMessage
+        ? isOpenThread && readReceiptViewActive
+          ? 0
+          : (existingSummary?.unreadCount ?? 0) + 1
+        : (existingSummary?.unreadCount ?? 0);
+
+      return upsertThreadSummary(current, {
+        contact,
+        lastMessage: message,
+        unreadCount,
+        isClosed: existingSummary?.isClosed ?? false,
+        closedAt: existingSummary?.closedAt ?? null,
+      });
+    });
+
+    if (isOpenThread) {
+      setMessages((current) =>
+        current.some((existingMessage) => existingMessage.id === message.id)
+          ? current
+          : [...current, message],
+      );
+    }
+  }
+
+  function applyThreadRead(payload: {
+    userId: string;
+    contactId: string;
+    readAt: string;
+    messageIds: string[];
+  }) {
+    if (payload.userId === user?.id) {
+      setThreadSummaries((current) =>
+        current.map((summary) =>
+          summary.contact.id === payload.contactId
+            ? { ...summary, unreadCount: 0 }
+            : summary,
+        ),
+      );
+    }
+
+    if (!payload.messageIds.length) {
+      return;
+    }
+
+    setMessages((current) =>
+      current.map((message) =>
+        payload.messageIds.includes(message.id)
+          ? { ...message, readAt: payload.readAt }
+          : message,
+      ),
+    );
+
+    setThreadSummaries((current) =>
+      current.map((summary) =>
+        payload.messageIds.includes(summary.lastMessage.id)
+          ? {
+              ...summary,
+              lastMessage: {
+                ...summary.lastMessage,
+                readAt: payload.readAt,
+              },
+            }
+          : summary,
+      ),
+    );
+  }
+
   async function loadSidebar(search = deferredSearch, background = false) {
     const requestId = sidebarRequestRef.current + 1;
     sidebarRequestRef.current = requestId;
@@ -231,10 +360,12 @@ export function useMessagingWorkspace() {
 
     if (!contactId) {
       setMessages([]);
+      setLoadedThreadContactId('');
       return;
     }
 
     setLoadingThread(true);
+    setLoadedThreadContactId('');
 
     try {
       const threadMessages = await messagesService.listThread(contactId);
@@ -246,21 +377,13 @@ export function useMessagingWorkspace() {
       startTransition(() => {
         setMessages(threadMessages);
       });
-
-      await markThreadRead(contactId);
-
-      setThreadSummaries((current) =>
-        current.map((summary) =>
-          summary.contact.id === contactId
-            ? { ...summary, unreadCount: 0 }
-            : summary,
-        ),
-      );
+      setLoadedThreadContactId(contactId);
     } catch (loadError) {
       if (threadRequestRef.current !== requestId) {
         return;
       }
 
+      setLoadedThreadContactId('');
       setError(getErrorMessage(loadError, 'Unable to load the conversation.'));
     } finally {
       if (threadRequestRef.current === requestId) {
@@ -313,6 +436,55 @@ export function useMessagingWorkspace() {
   }, [selectedContactId]);
 
   useEffect(() => {
+    if (
+      !user ||
+      !selectedContactId ||
+      loadingThread ||
+      loadedThreadContactId !== selectedContactId ||
+      !readReceiptViewActive ||
+      readReceiptRequestRef.current === selectedContactId
+    ) {
+      return;
+    }
+
+    const hasUnreadIncomingMessage = messages.some(
+      (message) =>
+        message.senderId === selectedContactId &&
+        message.recipientId === user.id &&
+        !message.readAt,
+    );
+    const hasUnreadSummary = (selectedConversation?.unreadCount ?? 0) > 0;
+
+    if (!hasUnreadIncomingMessage && !hasUnreadSummary) {
+      return;
+    }
+
+    readReceiptRequestRef.current = selectedContactId;
+
+    void markThreadRead(selectedContactId)
+      .then((payload) => {
+        applyThreadRead(payload);
+      })
+      .catch(() => {
+        return;
+      })
+      .finally(() => {
+        if (readReceiptRequestRef.current === selectedContactId) {
+          readReceiptRequestRef.current = '';
+        }
+      });
+  }, [
+    loadedThreadContactId,
+    loadingThread,
+    markThreadRead,
+    messages,
+    readReceiptViewActive,
+    selectedContactId,
+    selectedConversation?.unreadCount,
+    user,
+  ]);
+
+  useEffect(() => {
     if (!isStaff) {
       return;
     }
@@ -332,48 +504,7 @@ export function useMessagingWorkspace() {
       return;
     }
 
-    const contact = message.senderId === user.id ? message.recipient : message.sender;
-    const isOpenThread = selectedContactIdRef.current === contact.id;
-
-    setContacts((current) => {
-      if (current.some((item) => item.id === contact.id)) {
-        return current;
-      }
-
-      return [contact, ...current];
-    });
-
-    setThreadSummaries((current) => {
-      const existingSummary = current.find(
-        (summary) => summary.contact.id === contact.id,
-      );
-      const unreadCount =
-        message.recipientId === user.id && !isOpenThread && message.senderId !== user.id
-          ? (existingSummary?.unreadCount ?? 0) + 1
-          : 0;
-
-      return upsertThreadSummary(current, {
-        contact,
-        lastMessage: message,
-        unreadCount,
-        isClosed: existingSummary?.isClosed ?? false,
-        closedAt: existingSummary?.closedAt ?? null,
-      });
-    });
-
-    if (isOpenThread) {
-      setMessages((current) =>
-        current.some((existingMessage) => existingMessage.id === message.id)
-          ? current
-          : [...current, message],
-      );
-
-      if (message.senderId !== user.id) {
-        void markThreadRead(contact.id).catch(() => {
-          return;
-        });
-      }
-    }
+    applyMessageCreated(message);
   });
 
   useRealtimeEvent(realtimeEvent.chatThreadRead, (payload) => {
@@ -381,23 +512,7 @@ export function useMessagingWorkspace() {
       return;
     }
 
-    if (payload.userId === user.id) {
-      setThreadSummaries((current) =>
-        current.map((summary) =>
-          summary.contact.id === payload.contactId
-            ? { ...summary, unreadCount: 0 }
-            : summary,
-        ),
-      );
-    }
-
-    setMessages((current) =>
-      current.map((message) =>
-        payload.messageIds.includes(message.id)
-          ? { ...message, readAt: payload.readAt }
-          : message,
-      ),
-    );
+    applyThreadRead(payload);
   });
 
   useRealtimeEvent(realtimeEvent.chatMessageUpdated, (message) => {
@@ -491,10 +606,11 @@ export function useMessagingWorkspace() {
         return;
       }
 
-      await sendDirectMessage({
+      const createdMessage = await sendDirectMessage({
         recipientId: selectedContactId,
         body: messageBody.trim(),
       });
+      applyMessageCreated(createdMessage);
       setMessageBody('');
     } catch (sendError) {
       setError(getErrorMessage(sendError, 'Unable to send the message.'));
@@ -569,6 +685,23 @@ export function useMessagingWorkspace() {
     }
   }
 
+  async function handleStartCall(type: 'voice' | 'video') {
+    if (!selectedContactId) {
+      return;
+    }
+
+    setError('');
+
+    try {
+      await startCall({
+        recipientId: selectedContactId,
+        type,
+      });
+    } catch (callError) {
+      setError(getErrorMessage(callError, 'Unable to start the call.'));
+    }
+  }
+
   return {
     availabilityItems,
     broadcastAudience,
@@ -587,6 +720,7 @@ export function useMessagingWorkspace() {
     handleDeleteMessage,
     handleSendBroadcast,
     handleSendMessage,
+    handleStartCall,
     isStaff,
     isEditingMessage,
     loadingBroadcasts,

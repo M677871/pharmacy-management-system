@@ -17,6 +17,18 @@ export const realtimeEvent = {
   broadcastCreated: 'broadcast.created',
   orderCreated: 'order.created',
   orderUpdated: 'order.updated',
+  callIncoming: 'call.incoming',
+  callUpdated: 'call.updated',
+  callLifecycle: 'call.lifecycle',
+  callSignal: 'call.signal',
+  callRecordingCreated: 'call.recording.created',
+  meetingUpdated: 'meeting.updated',
+  meetingParticipantUpdated: 'meeting.participant.updated',
+  meetingSignal: 'meeting.signal',
+  meetingNoteCreated: 'meeting.note.created',
+  meetingNoteUpdated: 'meeting.note.updated',
+  meetingRecordingCreated: 'meeting.recording.created',
+  captionSegmentCreated: 'caption.segment.created',
 } as const;
 
 export const realtimeClientEvent = {
@@ -28,6 +40,15 @@ export const realtimeClientEvent = {
   chatDelete: 'chat.delete',
   chatMarkThreadRead: 'chat.markThreadRead',
   broadcastSend: 'broadcast.send',
+  callStart: 'call.start',
+  callAccept: 'call.accept',
+  callReject: 'call.reject',
+  callEnd: 'call.end',
+  callFail: 'call.fail',
+  callSignal: 'call.signal',
+  meetingJoin: 'meeting.join',
+  meetingLeave: 'meeting.leave',
+  meetingSignal: 'meeting.signal',
 } as const;
 
 export type UserRole = 'admin' | 'employee' | 'customer';
@@ -119,6 +140,145 @@ export interface BroadcastMessage {
   body: string;
   audienceRoles: UserRole[];
   sender: RealtimeUserSummary;
+  createdAt: string;
+}
+
+export type CallType = 'voice' | 'video';
+export type CallStatus =
+  | 'ringing'
+  | 'connecting'
+  | 'active'
+  | 'ended'
+  | 'missed'
+  | 'rejected'
+  | 'failed';
+
+export interface CallParticipant {
+  id: string;
+  callId: string;
+  userId: string;
+  role: 'caller' | 'receiver';
+  joinedAt: string | null;
+  leftAt: string | null;
+  microphoneMuted: boolean;
+  cameraEnabled: boolean;
+  user: RealtimeUserSummary;
+}
+
+export interface CallSession {
+  id: string;
+  type: CallType;
+  status: CallStatus;
+  callerId: string;
+  receiverId: string;
+  startedAt: string | null;
+  endedAt: string | null;
+  durationSeconds: number;
+  endedReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  caller: RealtimeUserSummary;
+  receiver: RealtimeUserSummary;
+  participants: CallParticipant[];
+}
+
+export interface CallLifecycleEvent {
+  callId: string;
+  status: CallStatus;
+  reason: 'accepted' | 'rejected' | 'ended' | 'missed' | 'failed';
+  occurredAt: string;
+}
+
+export interface RtcSignalEvent {
+  callId?: string;
+  meetingId?: string;
+  fromUserId: string;
+  targetUserId?: string | null;
+  type:
+    | 'offer'
+    | 'answer'
+    | 'ice-candidate'
+    | 'screen-share-started'
+    | 'screen-share-stopped';
+  payload: Record<string, unknown>;
+  clientRequestId: string | null;
+  occurredAt: string;
+}
+
+export interface RecordingItem {
+  id: string;
+  callId?: string;
+  meetingId?: string;
+  createdById: string;
+  startedAt: string;
+  endedAt: string;
+  durationSeconds: number;
+  mimeType: string | null;
+  sizeBytes: number;
+  hasFile: boolean;
+  downloadUrl: string | null;
+  createdAt: string;
+}
+
+export type MeetingState = 'scheduled' | 'live' | 'ended' | 'cancelled';
+
+export interface MeetingParticipant {
+  id: string;
+  meetingId: string;
+  userId: string;
+  role: 'host' | 'invitee';
+  status: 'invited' | 'accepted' | 'declined' | 'joined' | 'left';
+  joinedAt: string | null;
+  leftAt: string | null;
+  user: RealtimeUserSummary;
+}
+
+export interface Meeting {
+  id: string;
+  title: string;
+  agenda: string | null;
+  scheduledStartAt: string;
+  durationMinutes: number;
+  state: MeetingState;
+  hostId: string;
+  startedAt: string | null;
+  endedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  joinPath: string;
+  host: RealtimeUserSummary;
+  participants: MeetingParticipant[];
+}
+
+export interface MeetingParticipantUpdatedEvent {
+  meetingId: string;
+  user: RealtimeUserSummary;
+  action: 'joined' | 'left';
+  occurredAt: string;
+}
+
+export interface MeetingNote {
+  id: string;
+  meetingId: string;
+  authorId: string;
+  author: RealtimeUserSummary;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CaptionSegment {
+  id: string;
+  sessionType: 'call' | 'meeting';
+  sessionId: string;
+  authorId: string;
+  author: RealtimeUserSummary;
+  text: string;
+  sourceLanguage: string | null;
+  targetLanguage: string | null;
+  translatedText: string | null;
+  translationStatus: 'not_requested' | 'translated' | 'disabled' | 'failed';
+  translationProvider: string | null;
   createdAt: string;
 }
 
@@ -237,6 +397,18 @@ export interface RealtimeEventMap {
   [realtimeEvent.broadcastCreated]: BroadcastMessage;
   [realtimeEvent.orderCreated]: OrderRecord;
   [realtimeEvent.orderUpdated]: OrderRecord;
+  [realtimeEvent.callIncoming]: CallSession;
+  [realtimeEvent.callUpdated]: CallSession;
+  [realtimeEvent.callLifecycle]: CallLifecycleEvent;
+  [realtimeEvent.callSignal]: RtcSignalEvent;
+  [realtimeEvent.callRecordingCreated]: RecordingItem;
+  [realtimeEvent.meetingUpdated]: Meeting;
+  [realtimeEvent.meetingParticipantUpdated]: MeetingParticipantUpdatedEvent;
+  [realtimeEvent.meetingSignal]: RtcSignalEvent;
+  [realtimeEvent.meetingNoteCreated]: MeetingNote;
+  [realtimeEvent.meetingNoteUpdated]: MeetingNote;
+  [realtimeEvent.meetingRecordingCreated]: RecordingItem;
+  [realtimeEvent.captionSegmentCreated]: CaptionSegment;
 }
 
 export interface RealtimeToast {

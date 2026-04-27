@@ -1,5 +1,6 @@
 export type {
   BroadcastMessage,
+  CallSession,
   ChatThreadSummary,
   DirectMessage,
   RealtimeUserSummary as MessagingContact,
