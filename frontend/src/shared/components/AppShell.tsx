@@ -70,7 +70,7 @@ export function AppShell({
           </div>
         </div>
 
-        <nav className="workspace-nav">
+        <nav className="workspace-nav" aria-label="Primary navigation">
           {navigation.map((item) => (
             <NavLink
               key={item.to}
@@ -131,6 +131,8 @@ export function AppShell({
                 type="button"
                 className="workspace-utility workspace-utility-bell"
                 aria-label="Open notifications"
+                aria-expanded={notificationsOpen}
+                aria-controls="workspace-notifications"
                 onClick={() => setNotificationsOpen((current) => !current)}
               >
                 <BellIcon className="workspace-mini-icon" />
@@ -150,7 +152,12 @@ export function AppShell({
               </button>
             </div>
             {notificationsOpen ? (
-              <div className="workspace-notification-drawer">
+              <div
+                id="workspace-notifications"
+                className="workspace-notification-drawer"
+                role="dialog"
+                aria-label="Notifications"
+              >
                 <div className="workspace-notification-header">
                   <div>
                     <span className="surface-card-eyebrow">Notifications</span>
