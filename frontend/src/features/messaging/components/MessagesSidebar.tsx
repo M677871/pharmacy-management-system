@@ -1,4 +1,9 @@
-import { MessageIcon, SearchIcon } from '../../../shared/components/AppIcons';
+import {
+  BellIcon,
+  MessageIcon,
+  SearchIcon,
+  UserIcon,
+} from '../../../shared/components/AppIcons';
 import { formatRole } from '../../../shared/utils/format';
 import type { MessagingContact } from '../types/messaging.types';
 import type { ConversationItem } from '../utils/message-ui';
@@ -109,11 +114,13 @@ export function MessagesSidebar({
         <h2>Messages</h2>
         <div className="messages-sidebar-counters">
           <span className="messages-counter-pill" title="Total People">
-            👥 {conversationItems.length}
+            <UserIcon className="workspace-mini-icon" />
+            {conversationItems.length}
           </span>
           {unreadThreadsCount > 0 && (
             <span className="messages-counter-pill unread" title="Unread Messages">
-              🔔 {unreadThreadsCount}
+              <BellIcon className="workspace-mini-icon" />
+              {unreadThreadsCount}
             </span>
           )}
         </div>
