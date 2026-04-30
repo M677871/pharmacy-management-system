@@ -107,10 +107,9 @@ export function SettingsPage() {
               <span>Account Status</span>
               <div>
                 <span
-                  className={`order-status-badge ${
+                  className={`account-status-badge order-status-badge ${
                     user.isEmailVerified ? 'tone-green' : 'tone-orange'
                   }`}
-                  style={{ display: 'inline-flex', padding: '0.2rem 0.6rem', marginTop: '0.2rem', fontSize: '0.85rem' }}
                 >
                   {user.isEmailVerified ? 'Verified' : 'Pending verification'}
                 </span>
@@ -127,13 +126,17 @@ export function SettingsPage() {
             </div>
           </div>
 
-          <div className="security-status-card" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '1rem', padding: '1.25rem' }}>
-            <div style={{ flex: 'none', background: user.isTotpEnabled ? 'var(--bg)' : 'rgba(234, 90, 99, 0.1)', color: user.isTotpEnabled ? 'var(--primary)' : 'var(--red)', padding: '0.9rem', borderRadius: '50%' }}>
-              <ShieldIcon style={{ width: '1.75rem', height: '1.75rem' }} />
+          <div className="security-status-card security-status-row">
+            <div
+              className={`security-status-icon${
+                user.isTotpEnabled ? ' enabled' : ' disabled'
+              }`}
+            >
+              <ShieldIcon className="security-status-svg" />
             </div>
             <div>
-              <strong style={{ fontSize: '1.05rem', color: 'var(--primary-ink)' }}>{user.isTotpEnabled ? '2FA is enabled' : '2FA is disabled'}</strong>
-              <div style={{ color: 'var(--muted)', fontSize: '0.88rem', marginTop: '0.2rem' }}>
+              <strong>{user.isTotpEnabled ? '2FA is enabled' : '2FA is disabled'}</strong>
+              <div className="security-status-copy">
                 {user.isTotpEnabled
                   ? 'Your account requires an authenticator code at sign-in.'
                   : 'Set up an authenticator app to secure sensitive pharmacy workflows.'}
