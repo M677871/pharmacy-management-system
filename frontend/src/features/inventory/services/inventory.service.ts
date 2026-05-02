@@ -1,4 +1,4 @@
-import api from '../../../shared/api/axios';
+import { gql, graphqlMutation, graphqlQuery } from '../../../shared/api/graphql';
 import type {
   Category,
   ProductBatch,
@@ -13,15 +13,110 @@ import type {
   Supplier,
 } from '../types/inventory.types';
 
+const CATEGORIES = gql`query Categories { categories }`;
+const CREATE_CATEGORY = gql`
+  mutation CreateCategory($input: JSONObject!) {
+    createCategory(input: $input)
+  }
+`;
+const UPDATE_CATEGORY = gql`
+  mutation UpdateCategory($categoryId: ID!, $input: JSONObject!) {
+    updateCategory(categoryId: $categoryId, input: $input)
+  }
+`;
+const DELETE_CATEGORY = gql`
+  mutation DeleteCategory($categoryId: ID!) {
+    deleteCategory(categoryId: $categoryId)
+  }
+`;
+
+const SUPPLIERS = gql`query Suppliers { suppliers }`;
+const CREATE_SUPPLIER = gql`
+  mutation CreateSupplier($input: JSONObject!) {
+    createSupplier(input: $input)
+  }
+`;
+const UPDATE_SUPPLIER = gql`
+  mutation UpdateSupplier($supplierId: ID!, $input: JSONObject!) {
+    updateSupplier(supplierId: $supplierId, input: $input)
+  }
+`;
+const DELETE_SUPPLIER = gql`
+  mutation DeleteSupplier($supplierId: ID!) {
+    deleteSupplier(supplierId: $supplierId)
+  }
+`;
+
+const PRODUCTS = gql`
+  query Products($input: JSONObject) {
+    products(input: $input)
+  }
+`;
+const PRODUCT_BATCHES = gql`
+  query ProductBatches($productId: ID!) {
+    productBatches(productId: $productId)
+  }
+`;
+const CREATE_PRODUCT = gql`
+  mutation CreateProduct($input: JSONObject!) {
+    createProduct(input: $input)
+  }
+`;
+const UPDATE_PRODUCT = gql`
+  mutation UpdateProduct($productId: ID!, $input: JSONObject!) {
+    updateProduct(productId: $productId, input: $input)
+  }
+`;
+const DELETE_PRODUCT = gql`
+  mutation DeleteProduct($productId: ID!) {
+    deleteProduct(productId: $productId)
+  }
+`;
+
+const PURCHASES = gql`query Purchases { purchases }`;
+const RECEIVE_PURCHASE_STOCK = gql`
+  mutation ReceivePurchaseStock($input: JSONObject!) {
+    receivePurchaseStock(input: $input)
+  }
+`;
+
+const SALES = gql`query Sales { sales }`;
+const CHECKOUT_SALE = gql`
+  mutation CheckoutSale($input: JSONObject!) {
+    checkoutSale(input: $input)
+  }
+`;
+const SALE = gql`
+  query Sale($saleId: ID!) {
+    sale(saleId: $saleId)
+  }
+`;
+
+const RETURNS = gql`query Returns { returns }`;
+const CREATE_RETURN = gql`
+  mutation CreateReturn($input: JSONObject!) {
+    createReturn(input: $input)
+  }
+`;
+
+const STOCK_MOVEMENTS = gql`
+  query StockMovements {
+    stockMovements
+  }
+`;
+
 export const inventoryService = {
   async listCategories() {
-    const { data } = await api.get<Category[]>('/inventory/categories');
-    return data;
+    const result = await graphqlQuery<{ categories: Category[] }>(CATEGORIES);
+    return result.categories;
   },
 
   async createCategory(payload: { name: string; description?: string }) {
-    const { data } = await api.post<Category>('/inventory/categories', payload);
-    return data;
+    const result = await graphqlMutation<
+      { createCategory: Category },
+      { input: typeof payload }
+    >(CREATE_CATEGORY, { input: payload });
+    return result.createCategory;
   },
 
   async updateCategory(
@@ -31,23 +126,24 @@ export const inventoryService = {
       description: string | null;
     }>,
   ) {
-    const { data } = await api.patch<Category>(
-      `/inventory/categories/${categoryId}`,
-      payload,
-    );
-    return data;
+    const result = await graphqlMutation<
+      { updateCategory: Category },
+      { categoryId: string; input: typeof payload }
+    >(UPDATE_CATEGORY, { categoryId, input: payload });
+    return result.updateCategory;
   },
 
   async deleteCategory(categoryId: string) {
-    const { data } = await api.delete<{ id: string }>(
-      `/inventory/categories/${categoryId}`,
-    );
-    return data;
+    const result = await graphqlMutation<
+      { deleteCategory: { id: string } },
+      { categoryId: string }
+    >(DELETE_CATEGORY, { categoryId });
+    return result.deleteCategory;
   },
 
   async listSuppliers() {
-    const { data } = await api.get<Supplier[]>('/inventory/suppliers');
-    return data;
+    const result = await graphqlQuery<{ suppliers: Supplier[] }>(SUPPLIERS);
+    return result.suppliers;
   },
 
   async createSupplier(payload: {
@@ -57,8 +153,11 @@ export const inventoryService = {
     phone?: string;
     address?: string;
   }) {
-    const { data } = await api.post<Supplier>('/inventory/suppliers', payload);
-    return data;
+    const result = await graphqlMutation<
+      { createSupplier: Supplier },
+      { input: typeof payload }
+    >(CREATE_SUPPLIER, { input: payload });
+    return result.createSupplier;
   },
 
   async updateSupplier(
@@ -71,32 +170,42 @@ export const inventoryService = {
       address: string | null;
     }>,
   ) {
-    const { data } = await api.patch<Supplier>(
-      `/inventory/suppliers/${supplierId}`,
-      payload,
-    );
-    return data;
+    const result = await graphqlMutation<
+      { updateSupplier: Supplier },
+      { supplierId: string; input: typeof payload }
+    >(UPDATE_SUPPLIER, { supplierId, input: payload });
+    return result.updateSupplier;
   },
 
   async deleteSupplier(supplierId: string) {
-    const { data } = await api.delete<{ id: string }>(
-      `/inventory/suppliers/${supplierId}`,
-    );
-    return data;
+    const result = await graphqlMutation<
+      { deleteSupplier: { id: string } },
+      { supplierId: string }
+    >(DELETE_SUPPLIER, { supplierId });
+    return result.deleteSupplier;
   },
 
   async listProducts(search?: string) {
-    const { data } = await api.get<ProductSummary[]>('/inventory/products', {
-      params: search ? { search } : undefined,
-    });
-    return data;
+    const result = await graphqlQuery<
+      { products: ProductSummary[] },
+      { input?: { search?: string } }
+    >(
+      PRODUCTS,
+      search
+        ? {
+            input: { search },
+          }
+        : undefined,
+    );
+    return result.products;
   },
 
   async listProductBatches(productId: string) {
-    const { data } = await api.get<ProductBatch[]>(
-      `/inventory/products/${productId}/batches`,
-    );
-    return data;
+    const result = await graphqlQuery<
+      { productBatches: ProductBatch[] },
+      { productId: string }
+    >(PRODUCT_BATCHES, { productId });
+    return result.productBatches;
   },
 
   async createProduct(payload: {
@@ -107,9 +216,13 @@ export const inventoryService = {
     barcode?: string;
     description?: string;
     unit?: string;
+    doesNotExpire?: boolean;
   }) {
-    const { data } = await api.post<ProductSummary>('/inventory/products', payload);
-    return data;
+    const result = await graphqlMutation<
+      { createProduct: ProductSummary },
+      { input: typeof payload }
+    >(CREATE_PRODUCT, { input: payload });
+    return result.createProduct;
   },
 
   async updateProduct(
@@ -123,25 +236,29 @@ export const inventoryService = {
       description: string | null;
       unit: string;
       isActive: boolean;
+      doesNotExpire: boolean;
     }>,
   ) {
-    const { data } = await api.patch<ProductSummary>(
-      `/inventory/products/${productId}`,
-      payload,
-    );
-    return data;
+    const result = await graphqlMutation<
+      { updateProduct: ProductSummary },
+      { productId: string; input: typeof payload }
+    >(UPDATE_PRODUCT, { productId, input: payload });
+    return result.updateProduct;
   },
 
   async deleteProduct(productId: string) {
-    const { data } = await api.delete<{ id: string }>(
-      `/inventory/products/${productId}`,
-    );
-    return data;
+    const result = await graphqlMutation<
+      { deleteProduct: { id: string } },
+      { productId: string }
+    >(DELETE_PRODUCT, { productId });
+    return result.deleteProduct;
   },
 
   async listPurchases() {
-    const { data } = await api.get<PurchaseSummary[]>('/inventory/purchases');
-    return data;
+    const result = await graphqlQuery<{ purchases: PurchaseSummary[] }>(
+      PURCHASES,
+    );
+    return result.purchases;
   },
 
   async receiveStock(payload: {
@@ -152,22 +269,22 @@ export const inventoryService = {
     items: Array<{
       productId: string;
       batchNumber: string;
-      expiryDate: string;
+      expiryDate?: string | null;
       quantity: number;
       unitCost: number;
       notes?: string;
     }>;
   }) {
-    const { data } = await api.post<PurchaseReceipt>(
-      '/inventory/purchases/receive',
-      payload,
-    );
-    return data;
+    const result = await graphqlMutation<
+      { receivePurchaseStock: PurchaseReceipt },
+      { input: typeof payload }
+    >(RECEIVE_PURCHASE_STOCK, { input: payload });
+    return result.receivePurchaseStock;
   },
 
   async listSales() {
-    const { data } = await api.get<SaleSummary[]>('/inventory/sales');
-    return data;
+    const result = await graphqlQuery<{ sales: SaleSummary[] }>(SALES);
+    return result.sales;
   },
 
   async checkout(payload: {
@@ -179,18 +296,24 @@ export const inventoryService = {
       unitPrice?: number;
     }>;
   }) {
-    const { data } = await api.post<SaleDetail>('/inventory/sales/checkout', payload);
-    return data;
+    const result = await graphqlMutation<
+      { checkoutSale: SaleDetail },
+      { input: typeof payload }
+    >(CHECKOUT_SALE, { input: payload });
+    return result.checkoutSale;
   },
 
   async getSale(saleId: string) {
-    const { data } = await api.get<SaleDetail>(`/inventory/sales/${saleId}`);
-    return data;
+    const result = await graphqlQuery<
+      { sale: SaleDetail },
+      { saleId: string }
+    >(SALE, { saleId });
+    return result.sale;
   },
 
   async listReturns() {
-    const { data } = await api.get<ReturnSummary[]>('/inventory/returns');
-    return data;
+    const result = await graphqlQuery<{ returns: ReturnSummary[] }>(RETURNS);
+    return result.returns;
   },
 
   async createReturn(payload: {
@@ -202,14 +325,17 @@ export const inventoryService = {
       quantity: number;
     }>;
   }) {
-    const { data } = await api.post<ReturnReceipt>('/inventory/returns', payload);
-    return data;
+    const result = await graphqlMutation<
+      { createReturn: ReturnReceipt },
+      { input: typeof payload }
+    >(CREATE_RETURN, { input: payload });
+    return result.createReturn;
   },
 
   async listStockMovements() {
-    const { data } = await api.get<StockMovementSummary[]>(
-      '/inventory/stock-movements',
-    );
-    return data;
+    const result = await graphqlQuery<{
+      stockMovements: StockMovementSummary[];
+    }>(STOCK_MOVEMENTS);
+    return result.stockMovements;
   },
 };

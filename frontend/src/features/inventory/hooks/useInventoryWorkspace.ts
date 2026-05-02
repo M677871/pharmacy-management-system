@@ -70,6 +70,7 @@ export function useInventoryWorkspace() {
     description: '',
     barcode: '',
     unit: 'unit',
+    doesNotExpire: false,
   });
   const [purchaseForm, setPurchaseForm] = useState({
     supplierId: '',
@@ -249,6 +250,7 @@ export function useInventoryWorkspace() {
         description: productForm.description || undefined,
         barcode: productForm.barcode || undefined,
         unit: productForm.unit || undefined,
+        doesNotExpire: productForm.doesNotExpire,
       });
       setProductForm({
         sku: '',
@@ -258,6 +260,7 @@ export function useInventoryWorkspace() {
         description: '',
         barcode: '',
         unit: 'unit',
+        doesNotExpire: false,
       });
       await loadProducts(searchTerm);
       setFlashMessage({ type: 'success', text: 'Product created.' });
@@ -272,6 +275,18 @@ export function useInventoryWorkspace() {
     setIsBusy(true);
 
     try {
+      const selectedProduct = products.find(
+        (product) => product.id === purchaseForm.productId,
+      );
+
+      if (!selectedProduct?.doesNotExpire && !purchaseForm.expiryDate) {
+        setFlashMessage({
+          type: 'error',
+          text: 'Set an expiry date for this product.',
+        });
+        return;
+      }
+
       const receipt = await inventoryService.receiveStock({
         supplierId: purchaseForm.supplierId,
         invoiceNumber: purchaseForm.invoiceNumber || undefined,
@@ -280,7 +295,9 @@ export function useInventoryWorkspace() {
           {
             productId: purchaseForm.productId,
             batchNumber: purchaseForm.batchNumber,
-            expiryDate: `${purchaseForm.expiryDate}T00:00:00.000Z`,
+            expiryDate: selectedProduct?.doesNotExpire
+              ? undefined
+              : `${purchaseForm.expiryDate}T00:00:00.000Z`,
             quantity: Number(purchaseForm.quantity),
             unitCost: Number(purchaseForm.unitCost),
           },
@@ -297,11 +314,11 @@ export function useInventoryWorkspace() {
         notes: '',
       }));
 
-      const selectedProduct = products.find(
+      const receivedProduct = products.find(
         (product) => product.id === receipt.items[0]?.productId,
       );
 
-      await refreshAfterMutation({ productToInspect: selectedProduct });
+      await refreshAfterMutation({ productToInspect: receivedProduct });
       setFlashMessage({
         type: 'success',
         text: `Stock received. Purchase ${receipt.id.slice(0, 8)} saved.`,
@@ -314,7 +331,7 @@ export function useInventoryWorkspace() {
   }
 
   function addToCart(product: ProductSummary) {
-    if (product.availableQuantity <= 0) {
+    if (product.isExpired || product.availableQuantity <= 0) {
       setFlashMessage({
         type: 'error',
         text: `${product.name} has no sellable stock right now.`,

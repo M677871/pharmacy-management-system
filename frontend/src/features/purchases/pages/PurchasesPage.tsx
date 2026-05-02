@@ -169,6 +169,10 @@ export function PurchasesPage() {
     }
   }
 
+  const selectedProduct =
+    products.find((product) => product.id === receiveForm.productId) ?? null;
+  const selectedProductDoesNotExpire = Boolean(selectedProduct?.doesNotExpire);
+
   async function handleReceiveStock(event: FormEvent) {
     event.preventDefault();
 
@@ -179,6 +183,11 @@ export function PurchasesPage() {
 
     if (!products.length) {
       setError('Create a product before receiving stock.');
+      return;
+    }
+
+    if (!selectedProductDoesNotExpire && !receiveForm.expiryDate) {
+      setError('Set an expiry date for this product.');
       return;
     }
 
@@ -195,7 +204,9 @@ export function PurchasesPage() {
           {
             productId: receiveForm.productId,
             batchNumber: receiveForm.batchNumber,
-            expiryDate: `${receiveForm.expiryDate}T00:00:00.000Z`,
+            expiryDate: selectedProductDoesNotExpire
+              ? undefined
+              : `${receiveForm.expiryDate}T00:00:00.000Z`,
             quantity: Number(receiveForm.quantity),
             unitCost: Number(receiveForm.unitCost),
           },
@@ -284,6 +295,11 @@ export function PurchasesPage() {
                   setReceiveForm((current) => ({
                     ...current,
                     productId: event.target.value,
+                    expiryDate: products.find(
+                      (product) => product.id === event.target.value,
+                    )?.doesNotExpire
+                      ? ''
+                      : current.expiryDate,
                   }))
                 }
                 required
@@ -323,20 +339,22 @@ export function PurchasesPage() {
               />
             </label>
 
-            <label className="workspace-field">
-              <span>Expiry Date</span>
-              <input
-                type="date"
-                value={receiveForm.expiryDate}
-                onChange={(event) =>
-                  setReceiveForm((current) => ({
-                    ...current,
-                    expiryDate: event.target.value,
-                  }))
-                }
-                required
-              />
-            </label>
+            {!selectedProductDoesNotExpire ? (
+              <label className="workspace-field">
+                <span>Expiry Date</span>
+                <input
+                  type="date"
+                  value={receiveForm.expiryDate}
+                  onChange={(event) =>
+                    setReceiveForm((current) => ({
+                      ...current,
+                      expiryDate: event.target.value,
+                    }))
+                  }
+                  required
+                />
+              </label>
+            ) : null}
 
             <label className="workspace-field">
               <span>Quantity</span>

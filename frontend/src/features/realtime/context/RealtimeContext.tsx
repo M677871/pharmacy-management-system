@@ -11,7 +11,7 @@ import { io, type Socket } from 'socket.io-client';
 import { notificationsService } from '../../notifications/services/notifications.service';
 import { useAuth } from '../../auth/hooks/useAuth';
 import { messagesService } from '../../messaging/services/messages.service';
-import { SOCKET_URL } from '../../../shared/api/axios';
+import { SOCKET_URL } from '../../../shared/api/config';
 import {
   REALTIME_NAMESPACE,
   realtimeClientEvent,

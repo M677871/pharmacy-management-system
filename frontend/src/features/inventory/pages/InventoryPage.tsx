@@ -24,6 +24,7 @@ interface ProductFormState {
   salePrice: string;
   categoryId: string;
   isActive: boolean;
+  doesNotExpire: boolean;
 }
 
 interface CategoryFormState {
@@ -41,6 +42,7 @@ const EMPTY_PRODUCT_FORM: ProductFormState = {
   salePrice: '',
   categoryId: '',
   isActive: true,
+  doesNotExpire: false,
 };
 
 const EMPTY_CATEGORY_FORM: CategoryFormState = {
@@ -144,6 +146,7 @@ export function InventoryPage() {
           ? product.categoryId
           : '',
       isActive: product.isActive,
+      doesNotExpire: product.doesNotExpire,
     });
     const batches = await inventoryService.listProductBatches(product.id);
     setSelectedBatches(batches);
@@ -166,6 +169,7 @@ export function InventoryPage() {
           salePrice: Number(productForm.salePrice),
           categoryId: productForm.categoryId || null,
           isActive: productForm.isActive,
+          doesNotExpire: productForm.doesNotExpire,
         });
         setFlashMessage('Product updated successfully.');
       } else {
@@ -177,6 +181,7 @@ export function InventoryPage() {
           unit: productForm.unit,
           salePrice: Number(productForm.salePrice),
           categoryId: productForm.categoryId || undefined,
+          doesNotExpire: productForm.doesNotExpire,
         });
         setSelectedProductId(product.id);
         setFlashMessage('Product created successfully.');
@@ -218,6 +223,40 @@ export function InventoryPage() {
       setFlashMessage('Product deleted successfully.');
     } catch (deleteError) {
       setError(getErrorMessage(deleteError, 'Unable to delete the product.'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRemoveExpiredProduct(product: ProductSummary) {
+    if (!product.isExpired) {
+      return;
+    }
+
+    if (!window.confirm(`Remove expired product ${product.name} from the dashboard?`)) {
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setFlashMessage('');
+
+    try {
+      await inventoryService.updateProduct(product.id, { isActive: false });
+
+      if (selectedProductId === product.id) {
+        setSelectedProductId('');
+        setSelectedBatches([]);
+        setProductForm({
+          ...EMPTY_PRODUCT_FORM,
+          categoryId: categories[0]?.id || '',
+        });
+      }
+
+      await loadData(searchTerm, '');
+      setFlashMessage('Expired product removed from the dashboard.');
+    } catch (removeError) {
+      setError(getErrorMessage(removeError, 'Unable to remove expired product.'));
     } finally {
       setSaving(false);
     }
@@ -342,22 +381,44 @@ export function InventoryPage() {
                     <tr key={product.id}>
                       <td>
                         <strong>{product.name}</strong>
+                        {product.isExpired ? (
+                          <span className="inventory-expired-badge">Expired</span>
+                        ) : product.hasExpiredStock ? (
+                          <span className="inventory-warning-badge">Expired stock</span>
+                        ) : null}
                         <div className="table-subcopy">{product.barcode || product.unit}</div>
                       </td>
                       <td>{product.sku}</td>
                       <td>{product.categoryName || 'Uncategorized'}</td>
                       <td>{product.availableQuantity}</td>
-                      <td>{product.nextExpiry ? formatDate(product.nextExpiry) : '—'}</td>
                       <td>
-                        <button
-                          type="button"
-                          className="workspace-inline-link"
-                          onClick={() => {
-                            void inspectProduct(product);
-                          }}
-                        >
-                          {selectedProductId === product.id ? 'Selected' : 'Edit'}
-                        </button>
+                        {formatDate(
+                          product.nextExpiry,
+                          product.doesNotExpire ? 'No expiry date' : '—',
+                        )}
+                      </td>
+                      <td>
+                        <div className="stacked-list-actions">
+                          <button
+                            type="button"
+                            className="workspace-inline-link"
+                            onClick={() => {
+                              void inspectProduct(product);
+                            }}
+                          >
+                            {selectedProductId === product.id ? 'Selected' : 'Edit'}
+                          </button>
+                          {product.isExpired ? (
+                            <button
+                              type="button"
+                              className="workspace-inline-link workspace-inline-link-danger"
+                              disabled={saving}
+                              onClick={() => void handleRemoveExpiredProduct(product)}
+                            >
+                              Remove
+                            </button>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -488,6 +549,19 @@ export function InventoryPage() {
                 }
               />
               Active for sale
+            </label>
+            <label className="workspace-checkbox workspace-field-span-two">
+              <input
+                type="checkbox"
+                checked={productForm.doesNotExpire}
+                onChange={(event) =>
+                  setProductForm((current) => ({
+                    ...current,
+                    doesNotExpire: event.target.checked,
+                  }))
+                }
+              />
+              Does not expire
             </label>
             {productForm.id ? (
               <div className="button-row workspace-field-span-two">
@@ -650,8 +724,14 @@ export function InventoryPage() {
                 <div key={batch.id} className="stacked-list-row">
                   <div>
                     <strong>Batch {batch.batchNumber}</strong>
+                    {batch.isExpired ? (
+                      <span className="inventory-expired-badge">Expired</span>
+                    ) : batch.doesNotExpire ? (
+                      <span className="inventory-neutral-badge">No expiry date</span>
+                    ) : null}
                     <span>
-                      Expires {formatDate(batch.expiryDate)} · {batch.supplierName || 'No supplier'}
+                      Expires {formatDate(batch.expiryDate, 'No expiry date')} ·{' '}
+                      {batch.supplierName || 'No supplier'}
                     </span>
                   </div>
                   <div className="stacked-list-meta">

@@ -27,18 +27,22 @@ export interface ProductSummary {
   availableQuantity: number;
   totalOnHand: number;
   nextExpiry: string | null;
+  doesNotExpire: boolean;
+  hasExpiredStock: boolean;
+  isExpired: boolean;
 }
 
 export interface ProductBatch {
   id: string;
   batchNumber: string;
-  expiryDate: string;
+  expiryDate: string | null;
   receivedQuantity: number;
   quantityOnHand: number;
   unitCost: number;
   receivedAt: string;
   supplierName: string | null;
   isExpired: boolean;
+  doesNotExpire: boolean;
 }
 
 export interface PurchaseReceipt {
@@ -58,7 +62,7 @@ export interface PurchaseReceipt {
     lineTotal: number;
     batchId: string;
     batchNumber: string;
-    expiryDate: string;
+    expiryDate: string | null;
     quantityOnHand: number;
   }>;
 }
@@ -77,7 +81,7 @@ export interface PurchaseSummary {
 export interface SaleAllocation {
   batchId: string;
   batchNumber: string;
-  expiryDate: string;
+  expiryDate: string | null;
   quantity: number;
 }
 
