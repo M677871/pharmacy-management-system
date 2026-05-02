@@ -4,10 +4,11 @@ import { RealtimeCoreModule } from '../realtime/core/realtime-core.module';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
+import { UsersResolver } from './users.resolver';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User]), RealtimeCoreModule],
-  providers: [UsersService],
+  providers: [UsersService, UsersResolver],
   controllers: [UsersController],
   exports: [UsersService],
 })

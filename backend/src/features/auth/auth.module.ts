@@ -4,6 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigModule } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { AuthResolver } from './auth.resolver';
 import { UsersModule } from '../users/users.module';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -29,6 +30,7 @@ import { PasswordResetModule } from './password-reset/password-reset.module';
     GoogleStrategy,
     FacebookStrategy,
     InstagramStrategy,
+    AuthResolver,
   ],
   controllers: [AuthController],
   exports: [AuthService],
