@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { AppShell } from '../../../shared/components/AppShell';
 import { MetricCard } from '../../../shared/components/MetricCard';
 import { TrendLineChart } from '../../../shared/components/charts/TrendLineChart';
@@ -50,6 +51,13 @@ export function DashboardPage() {
   useEffect(() => {
     let active = true;
 
+    if (user?.role === 'customer') {
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
     setLoading(true);
     setError('');
 
@@ -85,9 +93,12 @@ export function DashboardPage() {
     return null;
   }
 
+  if (user.role === 'customer') {
+    return <Navigate to="/catalog" replace />;
+  }
+
   const displayName =
     `${user.firstName} ${user.lastName}`.trim() || user.email.split('@')[0];
-  const isClient = user.role === 'customer';
   const isAdmin = user.role === 'admin';
   const productHighlights = overview?.featuredProducts ?? overview?.catalogHighlights ?? [];
 
@@ -128,12 +139,12 @@ export function DashboardPage() {
           : null}
       </section>
 
-      <section className={`workspace-grid ${isClient ? 'workspace-grid-two' : ''}`}>
+      <section className="workspace-grid">
         <article className="surface-card surface-card-wide">
           <div className="surface-card-header">
             <div>
               <span className="surface-card-eyebrow">Overview</span>
-              <h2>{isClient ? 'Catalog activity' : 'Sales performance'}</h2>
+              <h2>Sales performance</h2>
             </div>
           </div>
           {overview ? (
@@ -142,9 +153,7 @@ export function DashboardPage() {
               series={[
                 { key: 'sales', label: 'Sales', color: '#1b66d1' },
                 { key: 'returns', label: 'Returns', color: '#ef6a4b' },
-                ...(isClient
-                  ? []
-                  : [{ key: 'purchases', label: 'Purchases', color: '#27b08b' }]),
+                { key: 'purchases', label: 'Purchases', color: '#27b08b' },
               ]}
             />
           ) : (
@@ -156,9 +165,9 @@ export function DashboardPage() {
           <div className="surface-card-header">
             <div>
               <span className="surface-card-eyebrow">
-                {isClient ? 'Featured' : 'Top Sellers'}
+                Top Sellers
               </span>
-              <h2>{isClient ? 'Popular products' : 'Top products'}</h2>
+              <h2>Top products</h2>
             </div>
           </div>
 
@@ -185,91 +194,57 @@ export function DashboardPage() {
       </section>
 
       <section className="workspace-grid workspace-grid-three">
-        {!isClient ? (
-          <>
-            <article className="surface-card">
-              <div className="surface-card-header">
-                <div>
-                  <span className="surface-card-eyebrow">Expiry Alerts</span>
-                  <h2>Expiring soon</h2>
-                </div>
-              </div>
-              {overview?.expiringSoon?.length ? (
-                <div className="list-card">
-                  {overview.expiringSoon.map((item) => (
-                    <div key={item.id} className="list-row">
-                      <div>
-                        <strong>{item.productName}</strong>
-                        <span>
-                          Batch {item.batchNumber} · {formatDate(item.expiryDate)}
-                        </span>
-                      </div>
-                      <div className="list-row-meta">
-                        <strong>{item.onHand}</strong>
-                        <span>{item.daysRemaining}d left</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="surface-empty">No expiring batches right now.</div>
-              )}
-            </article>
-
-            <article className="surface-card">
-              <div className="surface-card-header">
-                <div>
-                  <span className="surface-card-eyebrow">Stock Health</span>
-                  <h2>Low stock alerts</h2>
-                </div>
-              </div>
-              {overview?.lowStock?.length ? (
-                <HorizontalBarChart
-                  items={overview.lowStock.map((item) => ({
-                    label: item.productName,
-                    value: item.availableQuantity,
-                    helper: `${item.sku} · ${item.unit}`,
-                  }))}
-                  color="green"
-                />
-              ) : (
-                <div className="surface-empty">Inventory is well stocked.</div>
-              )}
-            </article>
-          </>
-        ) : (
-          <article className="surface-card surface-card-span-two">
+        <>
+          <article className="surface-card">
             <div className="surface-card-header">
               <div>
-                <span className="surface-card-eyebrow">Product Availability</span>
-                <h2>Fresh catalog picks</h2>
+                <span className="surface-card-eyebrow">Expiry Alerts</span>
+                <h2>Expiring soon</h2>
               </div>
             </div>
-            <div className="catalog-card-grid">
-              {productHighlights.slice(0, 4).map((product) => (
-                <article key={product.id} className="catalog-card">
-                  <div className="catalog-card-header">
-                    <div className="catalog-card-icon">{product.name.charAt(0)}</div>
+            {overview?.expiringSoon?.length ? (
+              <div className="list-card">
+                {overview.expiringSoon.map((item) => (
+                  <div key={item.id} className="list-row">
                     <div>
-                      <strong>{product.name}</strong>
-                      <span>{product.categoryName ?? product.sku}</span>
+                      <strong>{item.productName}</strong>
+                      <span>
+                        Batch {item.batchNumber} · {formatDate(item.expiryDate)}
+                      </span>
+                    </div>
+                    <div className="list-row-meta">
+                      <strong>{item.onHand}</strong>
+                      <span>{item.daysRemaining}d left</span>
                     </div>
                   </div>
-                  <div className="catalog-card-body">
-                    <div>
-                      <span>Price</span>
-                      <strong>{formatCurrency(product.salePrice)}</strong>
-                    </div>
-                    <div>
-                      <span>Available</span>
-                      <strong>{product.availableQuantity}</strong>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="surface-empty">No expiring batches right now.</div>
+            )}
           </article>
-        )}
+
+          <article className="surface-card">
+            <div className="surface-card-header">
+              <div>
+                <span className="surface-card-eyebrow">Stock Health</span>
+                <h2>Low stock alerts</h2>
+              </div>
+            </div>
+            {overview?.lowStock?.length ? (
+              <HorizontalBarChart
+                items={overview.lowStock.map((item) => ({
+                  label: item.productName,
+                  value: item.availableQuantity,
+                  helper: `${item.sku} · ${item.unit}`,
+                }))}
+                color="green"
+              />
+            ) : (
+              <div className="surface-empty">Inventory is well stocked.</div>
+            )}
+          </article>
+        </>
 
         <article className="surface-card">
           <div className="surface-card-header">
@@ -295,9 +270,7 @@ export function DashboardPage() {
             </div>
           ) : (
             <div className="surface-empty">
-              {isClient
-                ? 'Customer dashboards do not include transaction history.'
-                : 'No recent transactions yet.'}
+              No recent transactions yet.
             </div>
           )}
         </article>

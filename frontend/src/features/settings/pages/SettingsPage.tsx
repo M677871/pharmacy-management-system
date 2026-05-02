@@ -18,6 +18,8 @@ export function SettingsPage() {
     return null;
   }
 
+  const isCustomer = user.role === 'customer';
+
   async function handleGenerateTotp() {
     setBusy(true);
     setError('');
@@ -75,8 +77,12 @@ export function SettingsPage() {
 
   return (
     <AppShell
-      pageTitle="Settings"
-      pageSubtitle="Review account information and manage authentication security."
+      pageTitle={isCustomer ? 'Account' : 'Settings'}
+      pageSubtitle={
+        isCustomer
+          ? 'Review your profile and account security.'
+          : 'Review account information and manage authentication security.'
+      }
     >
       {error ? <div className="error-message">{error}</div> : null}
       {message ? <div className="success-message">{message}</div> : null}
