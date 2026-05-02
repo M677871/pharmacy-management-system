@@ -53,6 +53,7 @@ export function AppShell({
   }
 
   const navigation = getNavigationForRole(user.role);
+  const isCustomer = user.role === 'customer';
   const displayName =
     `${user.firstName} ${user.lastName}`.trim() || user.email.split('@')[0];
   const visibleNotifications = notifications
@@ -60,13 +61,15 @@ export function AppShell({
     .slice(0, 5);
 
   return (
-    <div className="workspace-shell">
+    <div className={`workspace-shell${isCustomer ? ' client-shell' : ''}`}>
       <aside className="workspace-sidebar">
         <div className="workspace-brand">
           <LogoIcon className="workspace-logo-mark" />
           <div>
             <div className="workspace-logo-text">PharmaFlow</div>
-            <div className="workspace-logo-subtitle">Pharmacy ERP System</div>
+            <div className="workspace-logo-subtitle">
+              {isCustomer ? 'Pharmacy Delivery' : 'Pharmacy ERP System'}
+            </div>
           </div>
         </div>
 
@@ -117,7 +120,9 @@ export function AppShell({
       <main className="workspace-main">
         <header className="workspace-topbar">
           <div>
-            <div className="workspace-page-eyebrow">Pharma & Analytics</div>
+            {!isCustomer ? (
+              <div className="workspace-page-eyebrow">Pharma & Analytics</div>
+            ) : null}
             <h1>{pageTitle}</h1>
             {pageSubtitle ? (
               <p className="workspace-page-subtitle">{pageSubtitle}</p>

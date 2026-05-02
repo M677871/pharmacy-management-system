@@ -30,7 +30,7 @@ function HomeRoute() {
     return <Navigate to="/auth/login" replace />;
   }
 
-  return <Navigate to="/dashboard" replace />;
+  return <Navigate to={user.role === 'customer' ? '/catalog' : '/dashboard'} replace />;
 }
 
 function GuestRoute({ children }: { children: React.ReactNode }) {
@@ -41,7 +41,7 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={user.role === 'customer' ? '/catalog' : '/dashboard'} replace />;
   }
 
   return <>{children}</>;
@@ -181,6 +181,14 @@ function App() {
       />
       <Route
         path="/catalog"
+        element={
+          <ProtectedRoute allowedRoles={['customer']}>
+            <CatalogPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cart"
         element={
           <ProtectedRoute allowedRoles={['customer']}>
             <CatalogPage />

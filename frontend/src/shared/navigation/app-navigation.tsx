@@ -26,7 +26,7 @@ const navigationItems: NavigationItem[] = [
     label: 'Dashboard',
     to: '/dashboard',
     icon: <DashboardIcon className="nav-icon" />,
-    roles: ['admin', 'employee', 'customer'],
+    roles: ['admin', 'employee'],
   },
   {
     label: 'Messages',
@@ -90,6 +90,43 @@ const navigationItems: NavigationItem[] = [
   },
 ];
 
+const customerNavigationItems: NavigationItem[] = [
+  {
+    label: 'Catalog',
+    to: '/catalog',
+    icon: <CatalogIcon className="nav-icon" />,
+    roles: ['customer'],
+  },
+  {
+    label: 'Cart',
+    to: '/cart',
+    icon: <PurchasesIcon className="nav-icon" />,
+    roles: ['customer'],
+  },
+  {
+    label: 'Orders',
+    to: '/orders',
+    icon: <DeliveryIcon className="nav-icon" />,
+    roles: ['customer'],
+  },
+  {
+    label: 'Messages',
+    to: '/messages',
+    icon: <MessageIcon className="nav-icon" />,
+    roles: ['customer'],
+  },
+  {
+    label: 'Account',
+    to: '/settings',
+    icon: <SettingsIcon className="nav-icon" />,
+    roles: ['customer'],
+  },
+];
+
 export function getNavigationForRole(role: User['role']) {
+  if (role === 'customer') {
+    return customerNavigationItems;
+  }
+
   return navigationItems.filter((item) => item.roles.includes(role));
 }
