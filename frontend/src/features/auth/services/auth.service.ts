@@ -1,4 +1,4 @@
-import api from '../../../shared/api/axios';
+import { gql, graphqlMutation, graphqlQuery } from '../../../shared/api/graphql';
 import type {
   AuthResponse,
   ForgotPasswordResponse,
@@ -8,6 +8,72 @@ import type {
   User,
 } from '../types/auth.types';
 
+const AUTH_REGISTER = gql`
+  mutation AuthRegister($input: JSONObject!) {
+    authRegister(input: $input)
+  }
+`;
+
+const AUTH_LOGIN = gql`
+  mutation AuthLogin($input: JSONObject!) {
+    authLogin(input: $input)
+  }
+`;
+
+const AUTH_REFRESH = gql`
+  mutation AuthRefresh($input: JSONObject!) {
+    authRefresh(input: $input)
+  }
+`;
+
+const AUTH_LOGOUT = gql`
+  mutation AuthLogout {
+    authLogout
+  }
+`;
+
+const AUTH_FORGOT_PASSWORD = gql`
+  mutation AuthForgotPassword($input: JSONObject!) {
+    authForgotPassword(input: $input)
+  }
+`;
+
+const AUTH_RESET_PASSWORD = gql`
+  mutation AuthResetPassword($input: JSONObject!) {
+    authResetPassword(input: $input)
+  }
+`;
+
+const AUTH_PROFILE = gql`
+  query AuthProfile {
+    authProfile
+  }
+`;
+
+const AUTH_GENERATE_TOTP = gql`
+  mutation AuthGenerateTotp {
+    authGenerateTotp
+  }
+`;
+
+const AUTH_ENABLE_TOTP = gql`
+  mutation AuthEnableTotp($input: JSONObject!) {
+    authEnableTotp(input: $input)
+  }
+`;
+
+const AUTH_VERIFY_TOTP = gql`
+  mutation AuthVerifyTotp($input: JSONObject!) {
+    authVerifyTotp(input: $input)
+  }
+`;
+
+const AUTH_DISABLE_TOTP = gql`
+  mutation AuthDisableTotp {
+    authDisableTotp
+  }
+`;
+
 export const authService = {
   async register(data: {
     email: string;
@@ -15,73 +81,87 @@ export const authService = {
     firstName?: string;
     lastName?: string;
   }): Promise<AuthResponse> {
-    const res = await api.post<AuthResponse>('/auth/register', data);
-    return res.data;
+    const result = await graphqlMutation<
+      { authRegister: AuthResponse },
+      { input: typeof data }
+    >(AUTH_REGISTER, { input: data });
+    return result.authRegister;
   },
 
-  async login(data: {
-    email: string;
-    password: string;
-  }): Promise<LoginResponse> {
-    const res = await api.post<LoginResponse>('/auth/login', data);
-    return res.data;
+  async login(data: { email: string; password: string }): Promise<LoginResponse> {
+    const result = await graphqlMutation<
+      { authLogin: LoginResponse },
+      { input: typeof data }
+    >(AUTH_LOGIN, { input: data });
+    return result.authLogin;
   },
 
   async refresh(refreshToken: string): Promise<AuthResponse> {
-    const res = await api.post<AuthResponse>('/auth/refresh', {
-      refreshToken,
-    });
-    return res.data;
+    const result = await graphqlMutation<
+      { authRefresh: AuthResponse },
+      { input: { refreshToken: string } }
+    >(
+      AUTH_REFRESH,
+      {
+        input: { refreshToken },
+      },
+      { skipAuthRefresh: true },
+    );
+    return result.authRefresh;
   },
 
   async logout(): Promise<void> {
-    await api.post('/auth/logout');
+    await graphqlMutation<{ authLogout: { message: string } }>(AUTH_LOGOUT);
   },
 
   async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
-    const res = await api.post<ForgotPasswordResponse>('/auth/forgot-password', {
-      email,
-    });
-    return res.data;
+    const result = await graphqlMutation<
+      { authForgotPassword: ForgotPasswordResponse },
+      { input: { email: string } }
+    >(AUTH_FORGOT_PASSWORD, { input: { email } });
+    return result.authForgotPassword;
   },
 
   async resetPassword(data: ResetPasswordPayload): Promise<{ message: string }> {
-    const res = await api.post<{ message: string }>('/auth/reset-password', {
-      ...data,
-    });
-    return res.data;
+    const result = await graphqlMutation<
+      { authResetPassword: { message: string } },
+      { input: ResetPasswordPayload }
+    >(AUTH_RESET_PASSWORD, { input: data });
+    return result.authResetPassword;
   },
 
   async getProfile(): Promise<User> {
-    const res = await api.get<User>('/auth/profile');
-    return res.data;
+    const result = await graphqlQuery<{ authProfile: User }>(AUTH_PROFILE);
+    return result.authProfile;
   },
 
   async generateTotp(): Promise<TotpSetupResponse> {
-    const res = await api.post<TotpSetupResponse>('/auth/totp/generate');
-    return res.data;
+    const result = await graphqlMutation<
+      { authGenerateTotp: TotpSetupResponse }
+    >(AUTH_GENERATE_TOTP);
+    return result.authGenerateTotp;
   },
 
   async enableTotp(code: string): Promise<{ message: string }> {
-    const res = await api.post<{ message: string }>('/auth/totp/enable', {
-      code,
-    });
-    return res.data;
+    const result = await graphqlMutation<
+      { authEnableTotp: { message: string } },
+      { input: { code: string } }
+    >(AUTH_ENABLE_TOTP, { input: { code } });
+    return result.authEnableTotp;
   },
 
-  async verifyTotp(
-    tempToken: string,
-    code: string,
-  ): Promise<AuthResponse> {
-    const res = await api.post<AuthResponse>('/auth/totp/verify', {
-      tempToken,
-      code,
-    });
-    return res.data;
+  async verifyTotp(tempToken: string, code: string): Promise<AuthResponse> {
+    const result = await graphqlMutation<
+      { authVerifyTotp: AuthResponse },
+      { input: { tempToken: string; code: string } }
+    >(AUTH_VERIFY_TOTP, { input: { tempToken, code } });
+    return result.authVerifyTotp;
   },
 
   async disableTotp(): Promise<{ message: string }> {
-    const res = await api.post<{ message: string }>('/auth/totp/disable');
-    return res.data;
+    const result = await graphqlMutation<
+      { authDisableTotp: { message: string } }
+    >(AUTH_DISABLE_TOTP);
+    return result.authDisableTotp;
   },
 };

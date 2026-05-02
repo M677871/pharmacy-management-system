@@ -1,12 +1,17 @@
 import {
   createContext,
-  useState,
   useEffect,
   useCallback,
   type ReactNode,
 } from 'react';
 import type { User } from '../types/auth.types';
 import { authService } from '../services/auth.service';
+import { useAppDispatch, useAppSelector } from '../../../app/hooks';
+import {
+  clearAuthState,
+  setAuthLoading,
+  setAuthUser,
+} from '../state/authSlice';
 
 interface AuthContextType {
   user: User | null;
@@ -28,26 +33,26 @@ export const AuthContext = createContext<AuthContextType>(
 );
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useAppDispatch();
+  const { user, loading } = useAppSelector((state) => state.auth);
 
   const refreshProfile = useCallback(async () => {
     try {
       const profile = await authService.getProfile();
-      setUser(profile);
+      dispatch(setAuthUser(profile));
     } catch {
-      setUser(null);
+      dispatch(setAuthUser(null));
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (token) {
-      refreshProfile().finally(() => setLoading(false));
+      refreshProfile().finally(() => dispatch(setAuthLoading(false)));
     } else {
-      setLoading(false);
+      dispatch(setAuthLoading(false));
     }
-  }, [refreshProfile]);
+  }, [dispatch, refreshProfile]);
 
   const setAuthTokens = useCallback(
     (accessToken: string, refreshToken: string) => {
@@ -64,10 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return result;
       }
       setAuthTokens(result.accessToken, result.refreshToken);
-      setUser(result.user);
+      dispatch(setAuthUser(result.user));
       return result;
     },
-    [setAuthTokens],
+    [dispatch, setAuthTokens],
   );
 
   const register = useCallback(
@@ -79,9 +84,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }) => {
       const result = await authService.register(data);
       setAuthTokens(result.accessToken, result.refreshToken);
-      setUser(result.user);
+      dispatch(setAuthUser(result.user));
     },
-    [setAuthTokens],
+    [dispatch, setAuthTokens],
   );
 
   const logout = useCallback(async () => {
@@ -90,9 +95,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-      setUser(null);
+      dispatch(clearAuthState());
     }
-  }, []);
+  }, [dispatch]);
 
   return (
     <AuthContext.Provider

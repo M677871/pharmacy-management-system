@@ -1,4 +1,4 @@
-import { API_URL } from '../../../shared/api/axios';
+import { API_URL } from '../../../shared/api/config';
 
 export function SocialLoginButtons() {
   return (
