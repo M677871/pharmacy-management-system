@@ -1044,6 +1044,46 @@ a {
   color: #b5353d;
 }
 
+.inventory-expired-badge,
+.inventory-warning-badge,
+.inventory-neutral-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-left: 0.45rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.inventory-expired-badge {
+  background: rgba(234, 90, 99, 0.14);
+  color: #b5353d;
+}
+
+.inventory-warning-badge {
+  background: rgba(240, 157, 65, 0.16);
+  color: #9a5a12;
+}
+
+.inventory-neutral-badge {
+  background: rgba(82, 100, 130, 0.12);
+  color: var(--muted);
+}
+
+.workspace-table .inventory-expired-badge,
+.workspace-table .inventory-warning-badge,
+.workspace-table .inventory-neutral-badge,
+.stacked-list-row .inventory-expired-badge,
+.stacked-list-row .inventory-warning-badge,
+.stacked-list-row .inventory-neutral-badge {
+  margin-top: 0.25rem;
+  margin-left: 0;
+}
+
 .list-card,
 .stacked-list,
 .transaction-list {
