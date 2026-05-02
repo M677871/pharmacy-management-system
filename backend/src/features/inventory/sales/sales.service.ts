@@ -221,7 +221,10 @@ export class SalesService {
             allocations: item.allocations
               .slice()
               .sort((left, right) =>
-                left.batch.expiryDate.localeCompare(right.batch.expiryDate),
+                this.compareNullableExpiry(
+                  left.batch.expiryDate,
+                  right.batch.expiryDate,
+                ),
               )
               .map((allocation) => ({
                 batchId: allocation.batchId,
@@ -232,5 +235,9 @@ export class SalesService {
           };
         }),
     };
+  }
+
+  private compareNullableExpiry(left: string | null, right: string | null) {
+    return (left ?? '9999-12-31').localeCompare(right ?? '9999-12-31');
   }
 }

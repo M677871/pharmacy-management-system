@@ -7,11 +7,13 @@ import { QueryFailedError } from 'typeorm';
 import { CategoriesRepository } from '../categories/categories.repository';
 import { roundCurrency, toDateOnly } from '../inventory.utils';
 import { InventoryRealtimeService } from '../realtime/inventory-realtime.service';
+import { Batch } from '../batches/entities/batch.entity';
 import {
   CreateProductDto,
   ListProductsQueryDto,
   UpdateProductDto,
 } from './dto/product.dto';
+import { Product } from './entities/product.entity';
 import { ProductsRepository } from './products.repository';
 
 @Injectable()
@@ -38,6 +40,7 @@ export class ProductsService {
       unit: dto.unit?.trim() || 'unit',
       salePrice: roundCurrency(dto.salePrice),
       categoryId: dto.categoryId || null,
+      doesNotExpire: dto.doesNotExpire ?? false,
       isActive: true,
     });
 
@@ -56,38 +59,7 @@ export class ProductsService {
       query.search?.trim(),
       query.includeInactive,
     );
-    const today = toDateOnly(new Date());
-
-    return products.map((product) => {
-      const activeBatches = product.batches.filter(
-        (batch) => batch.quantityOnHand > 0,
-      );
-      const sellableBatches = activeBatches.filter(
-        (batch) => batch.expiryDate >= today,
-      );
-
-      return {
-        id: product.id,
-        sku: product.sku,
-        name: product.name,
-        barcode: product.barcode,
-        unit: product.unit,
-        description: product.description,
-        salePrice: product.salePrice,
-        isActive: product.isActive,
-        categoryId: product.categoryId,
-        categoryName: product.category?.name ?? null,
-        availableQuantity: sellableBatches.reduce(
-          (sum, batch) => sum + (batch.quantityOnHand - batch.quantityReserved),
-          0,
-        ),
-        totalOnHand: activeBatches.reduce(
-          (sum, batch) => sum + batch.quantityOnHand,
-          0,
-        ),
-        nextExpiry: sellableBatches[0]?.expiryDate ?? null,
-      };
-    });
+    return products.map((product) => this.toProductSummary(product));
   }
 
   async findOne(id: string) {
@@ -97,31 +69,7 @@ export class ProductsService {
       throw new NotFoundException('Product not found.');
     }
 
-    const today = toDateOnly(new Date());
-    const activeBatches = product.batches.filter((batch) => batch.quantityOnHand > 0);
-    const sellableBatches = activeBatches.filter((batch) => batch.expiryDate >= today);
-
-    return {
-      id: product.id,
-      sku: product.sku,
-      name: product.name,
-      barcode: product.barcode,
-      description: product.description,
-      unit: product.unit,
-      salePrice: product.salePrice,
-      isActive: product.isActive,
-      categoryId: product.categoryId,
-      categoryName: product.category?.name ?? null,
-      availableQuantity: sellableBatches.reduce(
-        (sum, batch) => sum + (batch.quantityOnHand - batch.quantityReserved),
-        0,
-      ),
-      totalOnHand: activeBatches.reduce(
-        (sum, batch) => sum + batch.quantityOnHand,
-        0,
-      ),
-      nextExpiry: sellableBatches[0]?.expiryDate ?? null,
-    };
+    return this.toProductSummary(product);
   }
 
   async update(id: string, dto: UpdateProductDto) {
@@ -157,6 +105,7 @@ export class ProductsService {
       salePrice:
         dto.salePrice === undefined ? product.salePrice : roundCurrency(dto.salePrice),
       categoryId: dto.categoryId === undefined ? product.categoryId : dto.categoryId || null,
+      doesNotExpire: dto.doesNotExpire ?? product.doesNotExpire,
       isActive: dto.isActive ?? product.isActive,
     });
 
@@ -232,5 +181,74 @@ export class ProductsService {
     if (!category) {
       throw new NotFoundException('Category not found.');
     }
+  }
+
+  private toProductSummary(product: Product) {
+    const today = toDateOnly(new Date());
+    const activeBatches = product.batches.filter(
+      (batch) => batch.quantityOnHand > 0,
+    );
+    const sellableBatches = activeBatches.filter((batch) =>
+      this.isBatchSellableByExpiry(batch, today, product.doesNotExpire),
+    );
+    const expiredBatches = activeBatches.filter((batch) =>
+      this.isBatchExpired(batch, today, product.doesNotExpire),
+    );
+    const nextExpiry =
+      product.doesNotExpire
+        ? null
+        : sellableBatches
+            .filter((batch) => batch.expiryDate)
+            .sort((left, right) =>
+              this.compareNullableExpiry(left.expiryDate, right.expiryDate),
+            )[0]?.expiryDate ?? null;
+
+    return {
+      id: product.id,
+      sku: product.sku,
+      name: product.name,
+      barcode: product.barcode,
+      unit: product.unit,
+      description: product.description,
+      salePrice: product.salePrice,
+      isActive: product.isActive,
+      categoryId: product.categoryId,
+      categoryName: product.category?.name ?? null,
+      availableQuantity: sellableBatches.reduce(
+        (sum, batch) =>
+          sum + Math.max(batch.quantityOnHand - batch.quantityReserved, 0),
+        0,
+      ),
+      totalOnHand: activeBatches.reduce(
+        (sum, batch) => sum + batch.quantityOnHand,
+        0,
+      ),
+      nextExpiry,
+      doesNotExpire: product.doesNotExpire,
+      hasExpiredStock: expiredBatches.length > 0,
+      isExpired: expiredBatches.length > 0 && sellableBatches.length === 0,
+    };
+  }
+
+  private isBatchSellableByExpiry(
+    batch: Batch,
+    today: string,
+    productDoesNotExpire: boolean,
+  ) {
+    return productDoesNotExpire || !batch.expiryDate || batch.expiryDate > today;
+  }
+
+  private isBatchExpired(
+    batch: Batch,
+    today: string,
+    productDoesNotExpire: boolean,
+  ) {
+    return Boolean(
+      !productDoesNotExpire && batch.expiryDate && batch.expiryDate <= today,
+    );
+  }
+
+  private compareNullableExpiry(left: string | null, right: string | null) {
+    return (left ?? '9999-12-31').localeCompare(right ?? '9999-12-31');
   }
 }

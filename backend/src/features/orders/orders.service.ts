@@ -203,8 +203,15 @@ export class OrdersService {
           .setLock('pessimistic_write')
           .where('batch.productId = :productId', { productId: item.productId })
           .andWhere('batch.quantityOnHand > batch.quantityReserved')
-          .andWhere('batch.expiryDate >= :today', { today })
-          .orderBy('batch.expiryDate', 'ASC')
+          .andWhere(
+            item.product.doesNotExpire
+              ? '1 = 1'
+              : '(batch.expiryDate IS NULL OR batch.expiryDate > :today)',
+            {
+              today,
+            },
+          )
+          .orderBy('batch.expiryDate', 'ASC', 'NULLS LAST')
           .addOrderBy('batch.receivedAt', 'ASC')
           .addOrderBy('batch.createdAt', 'ASC')
           .getMany();
@@ -741,7 +748,7 @@ export class OrdersService {
           .filter(
             (batch) =>
               batch.quantityOnHand > batch.quantityReserved &&
-              batch.expiryDate >= today,
+              (product.doesNotExpire || !batch.expiryDate || batch.expiryDate > today),
           )
           .reduce(
             (sum, batch) => sum + (batch.quantityOnHand - batch.quantityReserved),
@@ -985,7 +992,9 @@ export class OrdersService {
       lineTotal: item.lineTotal,
       allocations: item.allocations
         .slice()
-        .sort((left, right) => left.batch.expiryDate.localeCompare(right.batch.expiryDate))
+        .sort((left, right) =>
+          this.compareNullableExpiry(left.batch.expiryDate, right.batch.expiryDate),
+        )
         .map((allocation) => this.toOrderItemAllocationPayload(allocation)),
     };
   }
@@ -1089,6 +1098,10 @@ export class OrdersService {
 
   private formatCurrency(amount: number) {
     return this.currencyFormatter.format(amount);
+  }
+
+  private compareNullableExpiry(left: string | null, right: string | null) {
+    return (left ?? '9999-12-31').localeCompare(right ?? '9999-12-31');
   }
 
   private async findDriverByName(name: string) {

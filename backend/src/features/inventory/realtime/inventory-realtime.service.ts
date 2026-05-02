@@ -36,7 +36,7 @@ interface BatchAlertState {
   productId: string;
   productName: string;
   batchNumber: string;
-  expiryDate: string;
+  expiryDate: string | null;
   quantityOnHand: number;
   nearExpiry: boolean;
 }
@@ -93,7 +93,8 @@ export class InventoryRealtimeService {
         (batch) => batch.quantityOnHand > 0,
       );
       const sellableBatches = activeBatches.filter(
-        (batch) => batch.expiryDate >= today,
+        (batch) =>
+          product.doesNotExpire || !batch.expiryDate || batch.expiryDate > today,
       );
       const availableQuantity = sellableBatches.reduce(
         (sum, batch) => sum + (batch.quantityOnHand - batch.quantityReserved),
@@ -307,6 +308,10 @@ export class InventoryRealtimeService {
         continue;
       }
 
+      if (!next.expiryDate) {
+        continue;
+      }
+
       const daysRemaining = Math.max(0, this.daysUntil(next.expiryDate));
       await this.notificationsService.createForRoles(STAFF_ROLES, {
         type: NotificationType.EXPIRY_WARNING,
@@ -333,8 +338,12 @@ export class InventoryRealtimeService {
     for (const batch of batches) {
       const nearExpiry =
         batch.quantityOnHand > 0 &&
-        batch.expiryDate >= today &&
-        this.daysUntil(batch.expiryDate) <= horizonDays;
+        !batch.product?.doesNotExpire &&
+        Boolean(
+          batch.expiryDate &&
+            batch.expiryDate > today &&
+            this.daysUntil(batch.expiryDate) <= horizonDays,
+        );
 
       stateByBatchId.set(batch.id, {
         id: batch.id,

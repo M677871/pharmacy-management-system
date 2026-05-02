@@ -50,8 +50,8 @@ export class Batch {
   @Column({ type: 'varchar' })
   batchNumber!: string;
 
-  @Column({ type: 'date' })
-  expiryDate!: string;
+  @Column({ type: 'date', nullable: true })
+  expiryDate!: string | null;
 
   @Column({ type: 'int', default: 0 })
   receivedQuantity!: number;

@@ -5,6 +5,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { RealtimeCoreModule } from '../realtime/core/realtime-core.module';
 import { User } from '../users/entities/user.entity';
 import { CallsController } from './calls.controller';
+import { CallsResolver } from './calls.resolver';
 import { CallsService } from './calls.service';
 import { CallParticipant } from './entities/call-participant.entity';
 import { CallRecording } from './entities/call-recording.entity';
@@ -22,7 +23,7 @@ import { CallSession } from './entities/call-session.entity';
     NotificationsModule,
     RealtimeCoreModule,
   ],
-  providers: [CallsService],
+  providers: [CallsService, CallsResolver],
   controllers: [CallsController],
   exports: [CallsService],
 })

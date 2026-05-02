@@ -9,6 +9,7 @@ import { StockMovementsModule } from '../stock-movements/stock-movements.module'
 import { SalesController } from './sales.controller';
 import { Sale } from './entities/sale.entity';
 import { SalesRepository } from './sales.repository';
+import { SalesResolver } from './sales.resolver';
 import { SalesService } from './sales.service';
 import { AllocationService } from './services/allocation.service';
 
@@ -23,7 +24,7 @@ import { AllocationService } from './services/allocation.service';
     InventoryRealtimeModule,
   ],
   controllers: [SalesController],
-  providers: [SalesRepository, SalesService, AllocationService],
+  providers: [SalesRepository, SalesService, AllocationService, SalesResolver],
   exports: [SalesRepository, SalesService],
 })
 export class SalesModule {}

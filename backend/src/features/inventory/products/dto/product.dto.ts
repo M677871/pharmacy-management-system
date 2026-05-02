@@ -46,6 +46,11 @@ export class CreateProductDto {
   @IsOptional()
   @IsUUID()
   categoryId?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  doesNotExpire?: boolean;
 }
 
 export class UpdateProductDto {
@@ -83,4 +88,9 @@ export class UpdateProductDto {
   @Transform(({ value }) => value === true || value === 'true')
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  doesNotExpire?: boolean;
 }

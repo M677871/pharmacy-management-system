@@ -38,7 +38,12 @@ export class BatchesService {
       unitCost: batch.unitCost,
       receivedAt: batch.receivedAt,
       notes: batch.notes,
-      isExpired: batch.expiryDate < today,
+      isExpired: this.isExpired(
+        batch.expiryDate,
+        today,
+        batch.product?.doesNotExpire ?? false,
+      ),
+      doesNotExpire: batch.product?.doesNotExpire ?? !batch.expiryDate,
     }));
   }
 
@@ -62,7 +67,8 @@ export class BatchesService {
       receivedAt: batch.receivedAt,
       supplierName: batch.supplier?.name ?? null,
       notes: batch.notes,
-      isExpired: batch.expiryDate < today,
+      isExpired: this.isExpired(batch.expiryDate, today, product.doesNotExpire),
+      doesNotExpire: product.doesNotExpire || !batch.expiryDate,
     }));
   }
 
@@ -88,7 +94,12 @@ export class BatchesService {
       unitCost: batch.unitCost,
       receivedAt: batch.receivedAt,
       notes: batch.notes,
-      isExpired: batch.expiryDate < today,
+      isExpired: this.isExpired(
+        batch.expiryDate,
+        today,
+        batch.product?.doesNotExpire ?? false,
+      ),
+      doesNotExpire: batch.product?.doesNotExpire ?? !batch.expiryDate,
     };
   }
 
@@ -124,5 +135,13 @@ export class BatchesService {
     throw new BadRequestException(
       'Batches are derived from stock workflows and cannot be deleted directly.',
     );
+  }
+
+  private isExpired(
+    expiryDate: string | null,
+    today: string,
+    productDoesNotExpire: boolean,
+  ) {
+    return Boolean(!productDoesNotExpire && expiryDate && expiryDate <= today);
   }
 }
