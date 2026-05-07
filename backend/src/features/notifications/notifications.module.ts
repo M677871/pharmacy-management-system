@@ -4,6 +4,7 @@ import { RealtimeCoreModule } from '../realtime/core/realtime-core.module';
 import { User } from '../users/entities/user.entity';
 import { Notification } from './entities/notification.entity';
 import { NotificationsController } from './notifications.controller';
+import { NotificationsResolver } from './notifications.resolver';
 import { NotificationsService } from './notifications.service';
 
 @Module({
@@ -11,7 +12,7 @@ import { NotificationsService } from './notifications.service';
     TypeOrmModule.forFeature([Notification, User]),
     RealtimeCoreModule,
   ],
-  providers: [NotificationsService],
+  providers: [NotificationsService, NotificationsResolver],
   controllers: [NotificationsController],
   exports: [NotificationsService],
 })

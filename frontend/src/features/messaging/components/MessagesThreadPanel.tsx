@@ -28,6 +28,7 @@ interface MessagesThreadPanelProps {
   onDeleteMessage: (message: DirectMessage) => void | Promise<void>;
   onStartVoiceCall: () => void | Promise<void>;
   onStartVideoCall: () => void | Promise<void>;
+  emptyStateCopy?: string;
 }
 
 function MessagesThreadSkeleton() {
@@ -70,6 +71,7 @@ export function MessagesThreadPanel({
   onStartEditingMessage,
   onStartVideoCall,
   onStartVoiceCall,
+  emptyStateCopy = 'Choose a contact from the sidebar to open a live conversation and start coordinating in real time.',
 }: MessagesThreadPanelProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
@@ -121,10 +123,7 @@ export function MessagesThreadPanel({
             <MessageIcon className="messages-empty-icon-svg" />
           </div>
           <strong>Select a conversation</strong>
-          <span>
-            Choose a contact from the sidebar to open a live conversation and start
-            coordinating in real time.
-          </span>
+          <span>{emptyStateCopy}</span>
         </div>
       </article>
     );

@@ -71,7 +71,11 @@ describe('Inventory / POS workflow (e2e)', () => {
     return res.body as { id: string; name: string };
   }
 
-  async function createProduct(accessToken: string, name = `Product ${Date.now()}`) {
+  async function createProduct(
+    accessToken: string,
+    name = `Product ${Date.now()}`,
+    options: { doesNotExpire?: boolean } = {},
+  ) {
     const res = await request(app.getHttpServer())
       .post('/api/inventory/products')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -79,6 +83,7 @@ describe('Inventory / POS workflow (e2e)', () => {
         sku: `SKU-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         name,
         salePrice: 25,
+        ...options,
       })
       .expect(201);
 
@@ -91,7 +96,7 @@ describe('Inventory / POS workflow (e2e)', () => {
     items: Array<{
       productId: string;
       batchNumber: string;
-      expiryDate: string;
+      expiryDate?: string | null;
       quantity: number;
       unitCost: number;
     }>,
@@ -219,6 +224,53 @@ describe('Inventory / POS workflow (e2e)', () => {
       .expect(400);
 
     expect(checkoutRes.body.message).toContain('Insufficient stock');
+  });
+
+  it('allows batches without expiry dates to remain sellable', async () => {
+    const staff = await registerStaff();
+    const supplier = await createSupplier(staff.accessToken);
+    const product = await createProduct(staff.accessToken, 'Digital Thermometer', {
+      doesNotExpire: true,
+    });
+
+    await receiveStock(staff.accessToken, supplier.id, [
+      {
+        productId: product.id,
+        batchNumber: 'DT-NOEXP',
+        quantity: 4,
+        unitCost: 12,
+      },
+    ]);
+
+    const productRes = await request(app.getHttpServer())
+      .get(`/api/inventory/products/${product.id}`)
+      .set('Authorization', `Bearer ${staff.accessToken}`)
+      .expect(200);
+
+    expect(productRes.body).toEqual(
+      expect.objectContaining({
+        availableQuantity: 4,
+        nextExpiry: null,
+        doesNotExpire: true,
+        isExpired: false,
+      }),
+    );
+
+    const checkoutRes = await request(app.getHttpServer())
+      .post('/api/inventory/sales/checkout')
+      .set('Authorization', `Bearer ${staff.accessToken}`)
+      .send({
+        items: [{ productId: product.id, quantity: 2 }],
+      })
+      .expect(201);
+
+    expect(checkoutRes.body.items[0].allocations).toEqual([
+      expect.objectContaining({
+        batchNumber: 'DT-NOEXP',
+        expiryDate: null,
+        quantity: 2,
+      }),
+    ]);
   });
 
   it('prevents returns from exceeding sold quantity', async () => {

@@ -1,4 +1,6 @@
-import api from '../../../shared/api/axios';
+import { gql, graphqlMutation, graphqlQuery } from '../../../shared/api/graphql';
+import { apiRequest } from '../../../shared/api/http';
+import { createRecordingUploadFormData } from '../../../shared/api/recordings';
 import type {
   CaptionSegment,
   Meeting,
@@ -15,75 +17,167 @@ export interface CreateMeetingPayload {
   participantIds: string[];
 }
 
+const MEETINGS = gql`query Meetings { meetings }`;
+const MEETING = gql`
+  query Meeting($meetingId: ID!) {
+    meeting(meetingId: $meetingId)
+  }
+`;
+const CREATE_MEETING = gql`
+  mutation CreateMeeting($input: JSONObject!) {
+    createMeeting(input: $input)
+  }
+`;
+const ELIGIBLE_MEETING_PARTICIPANTS = gql`
+  query EligibleMeetingParticipants($search: String) {
+    eligibleMeetingParticipants(search: $search)
+  }
+`;
+const JOIN_MEETING = gql`
+  mutation JoinMeeting($meetingId: ID!) {
+    joinMeeting(meetingId: $meetingId)
+  }
+`;
+const LEAVE_MEETING = gql`
+  mutation LeaveMeeting($meetingId: ID!) {
+    leaveMeeting(meetingId: $meetingId)
+  }
+`;
+const END_MEETING = gql`
+  mutation EndMeeting($meetingId: ID!) {
+    endMeeting(meetingId: $meetingId)
+  }
+`;
+const CANCEL_MEETING = gql`
+  mutation CancelMeeting($meetingId: ID!) {
+    cancelMeeting(meetingId: $meetingId)
+  }
+`;
+const MEETING_NOTES = gql`
+  query MeetingNotes($meetingId: ID!) {
+    meetingNotes(meetingId: $meetingId)
+  }
+`;
+const CREATE_MEETING_NOTE = gql`
+  mutation CreateMeetingNote($meetingId: ID!, $input: JSONObject!) {
+    createMeetingNote(meetingId: $meetingId, input: $input)
+  }
+`;
+const UPDATE_MEETING_NOTE = gql`
+  mutation UpdateMeetingNote($meetingId: ID!, $noteId: ID!, $input: JSONObject!) {
+    updateMeetingNote(meetingId: $meetingId, noteId: $noteId, input: $input)
+  }
+`;
+const MEETING_RECORDINGS = gql`
+  query MeetingRecordings($meetingId: ID!) {
+    meetingRecordings(meetingId: $meetingId)
+  }
+`;
+const CREATE_MEETING_CAPTION = gql`
+  mutation CreateMeetingCaption($meetingId: ID!, $input: JSONObject!) {
+    createMeetingCaption(meetingId: $meetingId, input: $input)
+  }
+`;
+const MEETING_CAPTIONS = gql`
+  query MeetingCaptions($meetingId: ID!) {
+    meetingCaptions(meetingId: $meetingId)
+  }
+`;
+
 export const meetingsService = {
   async list() {
-    const { data } = await api.get<Meeting[]>('/meetings');
-    return data;
+    const result = await graphqlQuery<{ meetings: Meeting[] }>(MEETINGS);
+    return result.meetings;
   },
 
   async get(meetingId: string) {
-    const { data } = await api.get<Meeting>(`/meetings/${meetingId}`);
-    return data;
+    const result = await graphqlQuery<
+      { meeting: Meeting },
+      { meetingId: string }
+    >(MEETING, { meetingId });
+    return result.meeting;
   },
 
   async create(payload: CreateMeetingPayload) {
-    const { data } = await api.post<Meeting>('/meetings', payload);
-    return data;
+    const result = await graphqlMutation<
+      { createMeeting: Meeting },
+      { input: CreateMeetingPayload }
+    >(CREATE_MEETING, { input: payload });
+    return result.createMeeting;
   },
 
   async listEligibleParticipants(search?: string) {
-    const { data } = await api.get<RealtimeUserSummary[]>(
-      '/meetings/eligible-participants',
-      { params: search?.trim() ? { search: search.trim() } : undefined },
-    );
-    return data;
+    const result = await graphqlQuery<
+      { eligibleMeetingParticipants: RealtimeUserSummary[] },
+      { search?: string }
+    >(ELIGIBLE_MEETING_PARTICIPANTS, {
+      search: search?.trim() || undefined,
+    });
+    return result.eligibleMeetingParticipants;
   },
 
   async join(meetingId: string) {
-    const { data } = await api.post<Meeting>(`/meetings/${meetingId}/join`);
-    return data;
+    const result = await graphqlMutation<
+      { joinMeeting: Meeting },
+      { meetingId: string }
+    >(JOIN_MEETING, { meetingId });
+    return result.joinMeeting;
   },
 
   async leave(meetingId: string) {
-    const { data } = await api.post<Meeting>(`/meetings/${meetingId}/leave`);
-    return data;
+    const result = await graphqlMutation<
+      { leaveMeeting: Meeting },
+      { meetingId: string }
+    >(LEAVE_MEETING, { meetingId });
+    return result.leaveMeeting;
   },
 
   async end(meetingId: string) {
-    const { data } = await api.post<Meeting>(`/meetings/${meetingId}/end`);
-    return data;
+    const result = await graphqlMutation<
+      { endMeeting: Meeting },
+      { meetingId: string }
+    >(END_MEETING, { meetingId });
+    return result.endMeeting;
   },
 
   async cancel(meetingId: string) {
-    const { data } = await api.post<Meeting>(`/meetings/${meetingId}/cancel`);
-    return data;
+    const result = await graphqlMutation<
+      { cancelMeeting: Meeting },
+      { meetingId: string }
+    >(CANCEL_MEETING, { meetingId });
+    return result.cancelMeeting;
   },
 
   async listNotes(meetingId: string) {
-    const { data } = await api.get<MeetingNote[]>(`/meetings/${meetingId}/notes`);
-    return data;
+    const result = await graphqlQuery<
+      { meetingNotes: MeetingNote[] },
+      { meetingId: string }
+    >(MEETING_NOTES, { meetingId });
+    return result.meetingNotes;
   },
 
   async createNote(meetingId: string, content: string) {
-    const { data } = await api.post<MeetingNote>(`/meetings/${meetingId}/notes`, {
-      content,
-    });
-    return data;
+    const result = await graphqlMutation<
+      { createMeetingNote: MeetingNote },
+      { meetingId: string; input: { content: string } }
+    >(CREATE_MEETING_NOTE, { meetingId, input: { content } });
+    return result.createMeetingNote;
   },
 
   async updateNote(meetingId: string, noteId: string, content: string) {
-    const { data } = await api.patch<MeetingNote>(
-      `/meetings/${meetingId}/notes/${noteId}`,
-      { content },
-    );
-    return data;
+    const result = await graphqlMutation<
+      { updateMeetingNote: MeetingNote },
+      { meetingId: string; noteId: string; input: { content: string } }
+    >(UPDATE_MEETING_NOTE, { meetingId, noteId, input: { content } });
+    return result.updateMeetingNote;
   },
 
   async listRecordings(meetingId: string) {
-    const { data } = await api.get<RecordingItem[]>(
-      `/meetings/${meetingId}/recordings`,
-    );
-    return data;
+    const result = await graphqlQuery<
+      { meetingRecordings: RecordingItem[] },
+      { meetingId: string }
+    >(MEETING_RECORDINGS, { meetingId });
+    return result.meetingRecordings;
   },
 
   async createRecording(meetingId: string, payload: {
@@ -93,25 +187,10 @@ export const meetingsService = {
     mimeType?: string;
     blob?: Blob;
   }) {
-    const formData = new FormData();
-    formData.append('startedAt', payload.startedAt);
-    formData.append('endedAt', payload.endedAt);
-    formData.append('durationSeconds', String(payload.durationSeconds));
-
-    if (payload.mimeType) {
-      formData.append('mimeType', payload.mimeType);
-    }
-
-    if (payload.blob) {
-      formData.append('recording', payload.blob, `meeting-${meetingId}.webm`);
-    }
-
-    const { data } = await api.post<RecordingItem>(
-      `/meetings/${meetingId}/recordings`,
-      formData,
-      { headers: { 'Content-Type': 'multipart/form-data' } },
-    );
-    return data;
+    return apiRequest<RecordingItem>(`/meetings/${meetingId}/recordings`, {
+      method: 'POST',
+      body: createRecordingUploadFormData(`meeting-${meetingId}`, payload),
+    });
   },
 
   async createCaption(meetingId: string, payload: {
@@ -120,17 +199,18 @@ export const meetingsService = {
     targetLanguage?: string;
     source?: 'manual' | 'browser_speech';
   }) {
-    const { data } = await api.post<CaptionSegment>(
-      `/meetings/${meetingId}/captions`,
-      payload,
-    );
-    return data;
+    const result = await graphqlMutation<
+      { createMeetingCaption: CaptionSegment },
+      { meetingId: string; input: typeof payload }
+    >(CREATE_MEETING_CAPTION, { meetingId, input: payload });
+    return result.createMeetingCaption;
   },
 
   async listCaptions(meetingId: string) {
-    const { data } = await api.get<CaptionSegment[]>(
-      `/meetings/${meetingId}/captions`,
-    );
-    return data;
+    const result = await graphqlQuery<
+      { meetingCaptions: CaptionSegment[] },
+      { meetingId: string }
+    >(MEETING_CAPTIONS, { meetingId });
+    return result.meetingCaptions;
   },
 };

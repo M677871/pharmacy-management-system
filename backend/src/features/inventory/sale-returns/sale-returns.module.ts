@@ -8,6 +8,7 @@ import { StockMovementsModule } from '../stock-movements/stock-movements.module'
 import { SaleReturn } from './entities/sale-return.entity';
 import { SaleReturnsController } from './sale-returns.controller';
 import { SaleReturnsRepository } from './sale-returns.repository';
+import { SaleReturnsResolver } from './sale-returns.resolver';
 import { SaleReturnsService } from './sale-returns.service';
 
 @Module({
@@ -19,7 +20,7 @@ import { SaleReturnsService } from './sale-returns.service';
     StockMovementsModule,
     InventoryRealtimeModule,
   ],
-  providers: [SaleReturnsRepository, SaleReturnsService],
+  providers: [SaleReturnsRepository, SaleReturnsService, SaleReturnsResolver],
   controllers: [SaleReturnsController],
   exports: [SaleReturnsRepository, SaleReturnsService],
 })

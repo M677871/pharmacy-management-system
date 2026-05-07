@@ -257,6 +257,13 @@ export class MeetingsService {
     meeting.state = MeetingState.ENDED;
     meeting.endedAt = new Date();
     await this.meetingsRepository.save(meeting);
+    await this.participantsRepository.update(
+      { meetingId, status: MeetingParticipantStatus.JOINED },
+      {
+        status: MeetingParticipantStatus.LEFT,
+        leftAt: meeting.endedAt,
+      },
+    );
     const updatedMeeting = await this.getMeetingEntityOrThrow(meetingId);
     this.emitMeetingUpdated(updatedMeeting);
     return this.toMeetingPayload(updatedMeeting);
@@ -273,6 +280,13 @@ export class MeetingsService {
     meeting.state = MeetingState.CANCELLED;
     meeting.endedAt = new Date();
     await this.meetingsRepository.save(meeting);
+    await this.participantsRepository.update(
+      { meetingId, status: MeetingParticipantStatus.JOINED },
+      {
+        status: MeetingParticipantStatus.LEFT,
+        leftAt: meeting.endedAt,
+      },
+    );
     await this.notificationsService.createForUserIds(
       this.getParticipantIds(meeting).filter((participantId) => participantId !== user.id),
       {
@@ -399,6 +413,14 @@ export class MeetingsService {
 
     if (meeting.state === MeetingState.CANCELLED) {
       throw new BadRequestException('Cannot record a cancelled meeting.');
+    }
+
+    if (!meeting.startedAt && meeting.state === MeetingState.SCHEDULED) {
+      throw new BadRequestException('Cannot upload a recording before the meeting starts.');
+    }
+
+    if (!file) {
+      throw new BadRequestException('Recording file is required.');
     }
 
     const startedAt = new Date(dto.startedAt);

@@ -66,6 +66,9 @@ export interface CatalogProduct {
   nextExpiry: string | null;
   unit: string;
   barcode: string | null;
+  doesNotExpire: boolean;
+  hasExpiredStock: boolean;
+  isExpired: boolean;
 }
 
 export interface DashboardOverview {

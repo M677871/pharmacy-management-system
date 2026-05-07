@@ -5,6 +5,7 @@ import { InventoryRealtimeModule } from '../realtime/inventory-realtime.module';
 import { Batch } from './entities/batch.entity';
 import { BatchesController } from './batches.controller';
 import { BatchesRepository } from './batches.repository';
+import { BatchesResolver } from './batches.resolver';
 import { BatchesService } from './batches.service';
 
 @Module({
@@ -13,7 +14,7 @@ import { BatchesService } from './batches.service';
     ProductsModule,
     InventoryRealtimeModule,
   ],
-  providers: [BatchesRepository, BatchesService],
+  providers: [BatchesRepository, BatchesService, BatchesResolver],
   controllers: [BatchesController],
   exports: [BatchesRepository, BatchesService],
 })

@@ -29,7 +29,7 @@ export class SaleItemAllocationsRepository {
       .leftJoinAndSelect('saleItem.product', 'product')
       .leftJoinAndSelect('allocation.batch', 'batch')
       .orderBy('saleItem.createdAt', 'DESC')
-      .addOrderBy('batch.expiryDate', 'ASC');
+      .addOrderBy('batch.expiryDate', 'ASC', 'NULLS LAST');
 
     if (filters.saleItemId) {
       builder.andWhere('allocation.saleItemId = :saleItemId', {

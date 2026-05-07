@@ -55,7 +55,7 @@ export class ProductsRepository {
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.batches', 'batch')
       .orderBy('product.name', 'ASC')
-      .addOrderBy('batch.expiryDate', 'ASC');
+      .addOrderBy('batch.expiryDate', 'ASC', 'NULLS LAST');
 
     if (!includeInactive) {
       builder.andWhere('product.isActive = true');

@@ -22,9 +22,12 @@ export function formatCurrency(value: number): string {
   }).format(value);
 }
 
-export function formatDate(value: string | null): string {
+export function formatDate(
+  value: string | null | undefined,
+  fallback = 'No expiry date',
+): string {
   if (!value) {
-    return 'N/A';
+    return fallback;
   }
 
   return new Date(value).toLocaleDateString();

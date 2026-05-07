@@ -11,6 +11,7 @@ import { MeetingNote } from './entities/meeting-note.entity';
 import { MeetingParticipant } from './entities/meeting-participant.entity';
 import { MeetingRecording } from './entities/meeting-recording.entity';
 import { MeetingsController } from './meetings.controller';
+import { MeetingsResolver } from './meetings.resolver';
 import { MeetingsService } from './meetings.service';
 
 @Module({
@@ -28,7 +29,7 @@ import { MeetingsService } from './meetings.service';
     MessagingModule,
     RealtimeCoreModule,
   ],
-  providers: [MeetingsService],
+  providers: [MeetingsService, MeetingsResolver],
   controllers: [MeetingsController],
   exports: [MeetingsService],
 })

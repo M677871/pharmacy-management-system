@@ -305,7 +305,7 @@ export interface OrderItemAllocation {
   id: string;
   batchId: string;
   batchNumber: string;
-  expiryDate: string;
+  expiryDate: string | null;
   quantity: number;
 }
 

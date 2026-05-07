@@ -6,7 +6,7 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { CreateCaptionSegmentDto } from '../media/dto/create-caption-segment.dto';
 import { CreateRecordingDto } from '../media/dto/create-recording.dto';
 import {
@@ -328,7 +328,10 @@ export class CallsService implements OnModuleDestroy {
         call.status,
       )
     ) {
-      throw new BadRequestException('Cannot signal on a finished call.');
+      // ICE candidates and SDP messages can still arrive briefly while both
+      // browsers are tearing the call down. Treat those late packets as a
+      // no-op instead of surfacing websocket errors.
+      return { ok: true };
     }
 
     const recipientIds = this.getParticipantIds(call).filter(
@@ -355,6 +358,16 @@ export class CallsService implements OnModuleDestroy {
   ) {
     const call = await this.getCallEntityOrThrow(callId);
     this.assertParticipant(call, user.id);
+
+    if (!call.startedAt) {
+      throw new BadRequestException(
+        'Cannot upload a recording for a call that never started.',
+      );
+    }
+
+    if (!file) {
+      throw new BadRequestException('Recording file is required.');
+    }
 
     const startedAt = new Date(dto.startedAt);
     const endedAt = new Date(dto.endedAt);
@@ -494,7 +507,7 @@ export class CallsService implements OnModuleDestroy {
     call: CallSession,
     status: CallStatus,
     reason: CallLifecycleReason,
-    actorUserId: string,
+    _actorUserId: string,
   ) {
     const endedAt = new Date();
     call.status = status;
@@ -505,7 +518,7 @@ export class CallsService implements OnModuleDestroy {
     call.endedReason = reason;
     await this.callsRepository.save(call);
     await this.participantsRepository.update(
-      { callId: call.id, userId: actorUserId },
+      { callId: call.id, leftAt: IsNull() },
       { leftAt: endedAt },
     );
     this.clearMissedTimer(call.id);

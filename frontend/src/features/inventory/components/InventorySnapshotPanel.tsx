@@ -10,6 +10,7 @@ interface InventorySnapshotPanelProps {
   selectedBatchProductName: string;
   onInspectBatches: (product: ProductSummary) => Promise<void>;
   onAddToCart: (product: ProductSummary) => void;
+  onRemoveExpiredProduct?: (product: ProductSummary) => Promise<void>;
 }
 
 export function InventorySnapshotPanel({
@@ -21,6 +22,7 @@ export function InventorySnapshotPanel({
   selectedBatchProductName,
   onInspectBatches,
   onAddToCart,
+  onRemoveExpiredProduct,
 }: InventorySnapshotPanelProps) {
   return (
     <div className="inventory-panel">
@@ -51,11 +53,23 @@ export function InventorySnapshotPanel({
           <tbody>
             {products.map((product) => (
               <tr key={product.id}>
-                <td>{product.name}</td>
+                <td>
+                  <strong>{product.name}</strong>
+                  {product.isExpired ? (
+                    <span className="inventory-expired-badge">Expired</span>
+                  ) : product.hasExpiredStock ? (
+                    <span className="inventory-warning-badge">Expired stock</span>
+                  ) : null}
+                </td>
                 <td>{product.sku}</td>
                 <td>{product.availableQuantity}</td>
                 <td>{product.totalOnHand}</td>
-                <td>{formatDate(product.nextExpiry)}</td>
+                <td>
+                  {formatDate(
+                    product.nextExpiry,
+                    product.doesNotExpire ? 'No expiry date' : '—',
+                  )}
+                </td>
                 <td className="inventory-table-actions">
                   <button
                     className="btn-secondary inventory-inline-button"
@@ -67,10 +81,20 @@ export function InventorySnapshotPanel({
                   <button
                     className="btn-primary inventory-inline-button"
                     type="button"
+                    disabled={product.isExpired || product.availableQuantity <= 0}
                     onClick={() => onAddToCart(product)}
                   >
                     Add to cart
                   </button>
+                  {product.isExpired && onRemoveExpiredProduct ? (
+                    <button
+                      className="btn-danger inventory-inline-button"
+                      type="button"
+                      onClick={() => void onRemoveExpiredProduct(product)}
+                    >
+                      Remove
+                    </button>
+                  ) : null}
                 </td>
               </tr>
             ))}
@@ -90,10 +114,14 @@ export function InventorySnapshotPanel({
           <ul>
             {selectedBatches.map((batch) => (
               <li key={batch.id}>
-                <strong>{batch.batchNumber}</strong> expires{' '}
-                {formatDate(batch.expiryDate)} • on hand {batch.quantityOnHand} • cost{' '}
+                <strong>{batch.batchNumber}</strong>{' '}
+                {batch.isExpired ? (
+                  <span className="inventory-expired-badge">Expired</span>
+                ) : batch.doesNotExpire ? (
+                  <span className="inventory-neutral-badge">No expiry date</span>
+                ) : null}{' '}
+                expires {formatDate(batch.expiryDate)} • on hand {batch.quantityOnHand} • cost{' '}
                 {formatCurrency(batch.unitCost)}
-                {batch.isExpired ? ' • expired' : ''}
               </li>
             ))}
           </ul>

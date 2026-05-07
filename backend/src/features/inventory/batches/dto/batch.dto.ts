@@ -36,8 +36,9 @@ export class CreateBatchDto {
   @IsString()
   batchNumber!: string;
 
+  @IsOptional()
   @IsDateString()
-  expiryDate!: string;
+  expiryDate?: string | null;
 
   @IsNumber({ maxDecimalPlaces: 0 })
   @Min(1)

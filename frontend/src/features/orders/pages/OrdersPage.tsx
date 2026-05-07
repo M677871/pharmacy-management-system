@@ -8,7 +8,6 @@ import { ordersService } from '../services/orders.service';
 import type { DeliveryDriver, OrderRecord, OrderStatus } from '../types/order.types';
 import {
   formatCurrency,
-  formatDate,
   formatDateTime,
   getErrorMessage,
 } from '../../../shared/utils/format';
@@ -397,6 +396,162 @@ export function OrdersPage() {
     } finally {
       setBusyKey('');
     }
+  }
+
+  if (!isStaff) {
+    return (
+      <AppShell
+        pageTitle="Orders"
+        pageSubtitle="Track your pharmacy orders and delivery status."
+        actions={
+          <Link to="/catalog" className="workspace-inline-link">
+            Catalog
+          </Link>
+        }
+      >
+        {error ? <div className="error-message">{error}</div> : null}
+        {flashMessage ? <div className="success-message">{flashMessage}</div> : null}
+
+        <section className="client-orders-page">
+          <div className="client-orders-toolbar">
+            <div>
+              <span className="surface-card-eyebrow">Order History</span>
+              <h2>Your orders</h2>
+            </div>
+            <Link to="/catalog" className="workspace-primary-action">
+              New order
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="surface-empty">Loading orders...</div>
+          ) : orders.length ? (
+            <div className="client-order-list">
+              {orders.map((order) => {
+                const statusMeta = ORDER_STATUS_META[order.status];
+                const whatsappUrl = buildWhatsappUrl(order);
+
+                return (
+                  <article key={order.id} className="client-order-card">
+                    <header className="client-order-card-header">
+                      <div>
+                        <span className={`order-status-badge tone-${statusMeta.tone}`}>
+                          {statusMeta.label}
+                        </span>
+                        <strong>{order.orderNumber}</strong>
+                        <span>{formatDateTime(order.createdAt)}</span>
+                      </div>
+                      <div className="client-order-total">
+                        <strong>{formatCurrency(order.totalAmount)}</strong>
+                        <span>{order.itemCount} item(s)</span>
+                      </div>
+                    </header>
+
+                    <div className="client-order-items">
+                      {order.items.map((item) => (
+                        <div key={item.id} className="client-order-item-row">
+                          <div>
+                            <strong>{item.productName}</strong>
+                            <span>
+                              {item.quantity} {item.unit} x {formatCurrency(item.unitPrice)}
+                            </span>
+                          </div>
+                          <strong>{formatCurrency(item.lineTotal)}</strong>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="client-order-meta-grid">
+                      <div>
+                        <span>Handled by</span>
+                        <strong>{order.assignedEmployee?.displayName ?? 'Pending'}</strong>
+                      </div>
+                      <div>
+                        <span>Delivery</span>
+                        <strong>{order.deliveryDriver?.name ?? 'Not assigned'}</strong>
+                      </div>
+                      <div>
+                        <span>Last update</span>
+                        <strong>{formatDateTime(order.updatedAt)}</strong>
+                      </div>
+                    </div>
+
+                    {order.notes ? (
+                      <div className="client-order-message">
+                        <span>Note</span>
+                        <p>{order.notes}</p>
+                      </div>
+                    ) : null}
+
+                    {order.rejectionReason ? (
+                      <div className="client-order-message rejected">
+                        <span>Rejection reason</span>
+                        <p>{order.rejectionReason}</p>
+                      </div>
+                    ) : null}
+
+                    {order.approvalMessage ? (
+                      <div className="client-order-message">
+                        <span>Pharmacy note</span>
+                        <p>{order.approvalMessage}</p>
+                      </div>
+                    ) : null}
+
+                    {order.status === 'approved' ? (
+                      <div className="client-order-delivery-action">
+                        <div>
+                          <strong>Delivery approved</strong>
+                          <span>
+                            {order.deliveryDriver?.phone ??
+                              'Driver contact details appear after assignment.'}
+                          </span>
+                        </div>
+                        <div className="button-row">
+                          {whatsappUrl ? (
+                            <a
+                              className="workspace-inline-link"
+                              href={whatsappUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              WhatsApp
+                            </a>
+                          ) : null}
+                          <button
+                            type="button"
+                            className="workspace-primary-action"
+                            disabled={
+                              Boolean(order.locationSharedAt) ||
+                              busyKey === `location:${order.id}`
+                            }
+                            onClick={() => void handleLocationShared(order)}
+                          >
+                            {order.locationSharedAt
+                              ? 'Location shared'
+                              : 'I shared my location'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {order.locationSharedAt ? (
+                      <div className="client-order-message success">
+                        <span>Location</span>
+                        <p>Confirmed on {formatDateTime(order.locationSharedAt)}.</p>
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="surface-empty client-orders-empty">
+              No orders yet. Place your first order from the catalog.
+            </div>
+          )}
+        </section>
+      </AppShell>
+    );
   }
 
   return (

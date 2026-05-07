@@ -1,5 +1,22 @@
-import api from '../../../shared/api/axios';
-import type { CaptionSegment, RecordingItem } from '../../realtime/types/realtime.types';
+import { gql, graphqlMutation, graphqlQuery } from '../../../shared/api/graphql';
+import { apiRequest } from '../../../shared/api/http';
+import { createRecordingUploadFormData } from '../../../shared/api/recordings';
+import type {
+  CallSession,
+  CaptionSegment,
+  RecordingItem,
+} from '../../realtime/types/realtime.types';
+
+const CREATE_CALL_CAPTION = gql`
+  mutation CreateCallCaption($callId: ID!, $input: JSONObject!) {
+    createCallCaption(callId: $callId, input: $input)
+  }
+`;
+const CALL_CAPTIONS = gql`
+  query CallCaptions($callId: ID!) {
+    callCaptions(callId: $callId)
+  }
+`;
 
 export const callsService = {
   async createRecording(callId: string, payload: {
@@ -9,25 +26,22 @@ export const callsService = {
     mimeType?: string;
     blob?: Blob;
   }) {
-    const formData = new FormData();
-    formData.append('startedAt', payload.startedAt);
-    formData.append('endedAt', payload.endedAt);
-    formData.append('durationSeconds', String(payload.durationSeconds));
+    return apiRequest<RecordingItem>(`/calls/${callId}/recordings`, {
+      method: 'POST',
+      body: createRecordingUploadFormData(`call-${callId}`, payload),
+    });
+  },
 
-    if (payload.mimeType) {
-      formData.append('mimeType', payload.mimeType);
-    }
+  async endCall(callId: string) {
+    return apiRequest<CallSession>(`/calls/${callId}/end`, {
+      method: 'POST',
+    });
+  },
 
-    if (payload.blob) {
-      formData.append('recording', payload.blob, `call-${callId}.webm`);
-    }
-
-    const { data } = await api.post<RecordingItem>(
-      `/calls/${callId}/recordings`,
-      formData,
-      { headers: { 'Content-Type': 'multipart/form-data' } },
-    );
-    return data;
+  async failCall(callId: string) {
+    return apiRequest<CallSession>(`/calls/${callId}/fail`, {
+      method: 'POST',
+    });
   },
 
   async createCaption(callId: string, payload: {
@@ -36,15 +50,18 @@ export const callsService = {
     targetLanguage?: string;
     source?: 'manual' | 'browser_speech';
   }) {
-    const { data } = await api.post<CaptionSegment>(
-      `/calls/${callId}/captions`,
-      payload,
-    );
-    return data;
+    const result = await graphqlMutation<
+      { createCallCaption: CaptionSegment },
+      { callId: string; input: typeof payload }
+    >(CREATE_CALL_CAPTION, { callId, input: payload });
+    return result.createCallCaption;
   },
 
   async listCaptions(callId: string) {
-    const { data } = await api.get<CaptionSegment[]>(`/calls/${callId}/captions`);
-    return data;
+    const result = await graphqlQuery<
+      { callCaptions: CaptionSegment[] },
+      { callId: string }
+    >(CALL_CAPTIONS, { callId });
+    return result.callCaptions;
   },
 };

@@ -28,6 +28,9 @@ export interface CatalogProduct {
   nextExpiry: string | null;
   unit: string;
   barcode: string | null;
+  doesNotExpire: boolean;
+  hasExpiredStock: boolean;
+  isExpired: boolean;
 }
 
 @Injectable()
@@ -195,7 +198,9 @@ export class DashboardService {
   }
 
   async getCatalog(search?: string, limit?: number) {
-    const products = await this.getCatalogProducts(search);
+    const products = (await this.getCatalogProducts(search)).filter(
+      (product) => !product.isExpired,
+    );
 
     return {
       total: products.length,
@@ -208,8 +213,11 @@ export class DashboardService {
     catalog: CatalogProduct[],
     salesTrend: Array<Record<string, unknown>>,
   ) {
-    const inStockProducts = catalog.filter((product) => product.availableQuantity > 0);
-    const expiringSoonProducts = catalog.filter((product) => {
+    const visibleCatalog = catalog.filter((product) => !product.isExpired);
+    const inStockProducts = visibleCatalog.filter(
+      (product) => product.availableQuantity > 0,
+    );
+    const expiringSoonProducts = visibleCatalog.filter((product) => {
       if (!product.nextExpiry) {
         return false;
       }
@@ -217,7 +225,7 @@ export class DashboardService {
       return this.daysUntil(product.nextExpiry) <= 30;
     });
     const categories = new Set(
-      catalog.map((product) => product.categoryName).filter(Boolean),
+      visibleCatalog.map((product) => product.categoryName).filter(Boolean),
     );
 
     return {
@@ -228,7 +236,7 @@ export class DashboardService {
           id: 'available-products',
           label: 'Available Products',
           value: inStockProducts.length,
-          helper: `${catalog.length} listed items`,
+          helper: `${visibleCatalog.length} listed items`,
           tone: 'blue',
         },
         {
@@ -312,7 +320,9 @@ export class DashboardService {
       .createQueryBuilder('batch')
       .leftJoinAndSelect('batch.product', 'product')
       .where('batch.quantityOnHand > 0')
-      .andWhere('batch.expiryDate >= :today', { today })
+      .andWhere('product.doesNotExpire = false')
+      .andWhere('batch.expiryDate IS NOT NULL')
+      .andWhere('batch.expiryDate > :today', { today })
       .andWhere('batch.expiryDate <= :horizon', { horizon })
       .orderBy('batch.expiryDate', 'ASC')
       .addOrderBy('batch.quantityOnHand', 'ASC')
@@ -321,21 +331,28 @@ export class DashboardService {
 
     const totalCount = await repository
       .createQueryBuilder('batch')
+      .leftJoin('batch.product', 'product')
       .where('batch.quantityOnHand > 0')
-      .andWhere('batch.expiryDate >= :today', { today })
+      .andWhere('product.doesNotExpire = false')
+      .andWhere('batch.expiryDate IS NOT NULL')
+      .andWhere('batch.expiryDate > :today', { today })
       .andWhere('batch.expiryDate <= :horizon', { horizon })
       .getCount();
 
     return {
       totalCount,
-      items: batches.map((batch) => ({
-        id: batch.id,
-        productName: batch.product?.name ?? 'Unknown Product',
-        batchNumber: batch.batchNumber,
-        expiryDate: batch.expiryDate,
-        onHand: batch.quantityOnHand,
-        daysRemaining: this.daysUntil(batch.expiryDate),
-      })),
+      items: batches.map((batch) => {
+        const expiryDate = batch.expiryDate ?? today;
+
+        return {
+          id: batch.id,
+          productName: batch.product?.name ?? 'Unknown Product',
+          batchNumber: batch.batchNumber,
+          expiryDate,
+          onHand: batch.quantityOnHand,
+          daysRemaining: this.daysUntil(expiryDate),
+        };
+      }),
     };
   }
 
@@ -594,7 +611,8 @@ export class DashboardService {
       recentProducts: recentProducts.map((product) => {
         const activeBatches = product.batches.filter((batch) => batch.quantityOnHand > 0);
         const sellableBatches = activeBatches.filter(
-          (batch) => batch.expiryDate >= today,
+          (batch) =>
+            product.doesNotExpire || !batch.expiryDate || batch.expiryDate > today,
         );
 
         return {
@@ -604,7 +622,8 @@ export class DashboardService {
           categoryName: product.category?.name ?? null,
           salePrice: product.salePrice,
           availableQuantity: sellableBatches.reduce(
-            (sum, batch) => sum + batch.quantityOnHand,
+            (sum, batch) =>
+              sum + Math.max(batch.quantityOnHand - batch.quantityReserved, 0),
             0,
           ),
           createdAt: product.createdAt.toISOString(),

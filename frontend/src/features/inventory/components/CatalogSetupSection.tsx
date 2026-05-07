@@ -22,6 +22,7 @@ interface ProductFormState {
   description: string;
   barcode: string;
   unit: string;
+  doesNotExpire: boolean;
 }
 
 interface CatalogSetupSectionProps {
@@ -202,6 +203,19 @@ export function CatalogSetupSection({
             ))}
           </select>
         </div>
+        <label className="workspace-checkbox">
+          <input
+            type="checkbox"
+            checked={productForm.doesNotExpire}
+            onChange={(event) =>
+              setProductForm((current) => ({
+                ...current,
+                doesNotExpire: event.target.checked,
+              }))
+            }
+          />
+          Does not expire
+        </label>
         <button className="btn-primary" type="submit" disabled={isBusy}>
           Save product
         </button>

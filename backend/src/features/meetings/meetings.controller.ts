@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -22,6 +23,8 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateCaptionSegmentDto } from '../media/dto/create-caption-segment.dto';
 import { CreateRecordingDto } from '../media/dto/create-recording.dto';
 import {
+  DEFAULT_MAX_RECORDING_UPLOAD_BYTES,
+  isSupportedRecordingMimeType,
   RecordingStorageService,
   UploadedRecordingFile,
 } from '../media/recording-storage.service';
@@ -134,7 +137,21 @@ export class MeetingsController {
   }
 
   @Post(':meetingId/recordings')
-  @UseInterceptors(FileInterceptor('recording'))
+  @UseInterceptors(
+    FileInterceptor('recording', {
+      limits: {
+        fileSize: DEFAULT_MAX_RECORDING_UPLOAD_BYTES,
+      },
+      fileFilter: (_request, file, callback) => {
+        if (!isSupportedRecordingMimeType(file.mimetype)) {
+          callback(new BadRequestException('Unsupported recording file type.'), false);
+          return;
+        }
+
+        callback(null, true);
+      },
+    }),
+  )
   createRecording(
     @CurrentUser() user: User,
     @Param('meetingId', ParseUUIDPipe) meetingId: string,

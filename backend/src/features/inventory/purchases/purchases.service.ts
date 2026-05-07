@@ -149,7 +149,18 @@ export class PurchasesService {
 
       for (const item of dto.items) {
         const batchNumber = item.batchNumber.trim();
-        const expiryDate = item.expiryDate.slice(0, 10);
+        const product = productsById.get(item.productId);
+        const expiryDate = product?.doesNotExpire
+          ? null
+          : item.expiryDate
+            ? item.expiryDate.slice(0, 10)
+            : null;
+
+        if (!product?.doesNotExpire && !expiryDate) {
+          throw new BadRequestException(
+            `Expiry date is required for "${product?.name ?? item.productId}".`,
+          );
+        }
 
         let batch = await this.batchesRepository.findByIdentity(
           item.productId,
@@ -178,7 +189,6 @@ export class PurchasesService {
         batch.supplierId = supplier.id;
         batch = await this.batchesRepository.save(batch, manager);
 
-        const product = productsById.get(item.productId);
         const lineTotal = roundCurrency(item.quantity * item.unitCost);
 
         let purchaseItem = this.purchaseItemsRepository.create({

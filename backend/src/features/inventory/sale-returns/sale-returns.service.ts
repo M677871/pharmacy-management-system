@@ -214,7 +214,7 @@ export class SaleReturnsService {
         for (const allocation of saleItem.allocations
           .slice()
           .sort((left, right) =>
-            left.batch.expiryDate.localeCompare(right.batch.expiryDate),
+            this.compareNullableExpiry(left.batch.expiryDate, right.batch.expiryDate),
           )) {
           if (remainingToRestock <= 0) {
             break;
@@ -340,5 +340,9 @@ export class SaleReturnsService {
     }
 
     return grouped;
+  }
+
+  private compareNullableExpiry(left: string | null, right: string | null) {
+    return (left ?? '9999-12-31').localeCompare(right ?? '9999-12-31');
   }
 }

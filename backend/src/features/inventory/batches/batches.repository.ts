@@ -33,14 +33,13 @@ export class BatchesRepository {
   }
 
   findByProductId(productId: string) {
-    return this.batchesRepository.find({
-      where: { productId },
-      relations: { supplier: true },
-      order: {
-        expiryDate: 'ASC',
-        receivedAt: 'ASC',
-      },
-    });
+    return this.batchesRepository
+      .createQueryBuilder('batch')
+      .leftJoinAndSelect('batch.supplier', 'supplier')
+      .where('batch.productId = :productId', { productId })
+      .orderBy('batch.expiryDate', 'ASC', 'NULLS LAST')
+      .addOrderBy('batch.receivedAt', 'ASC')
+      .getMany();
   }
 
   findAll(query: { productId?: string; includeExpired?: boolean; includeEmpty?: boolean }) {
@@ -48,7 +47,7 @@ export class BatchesRepository {
       .createQueryBuilder('batch')
       .leftJoinAndSelect('batch.product', 'product')
       .leftJoinAndSelect('batch.supplier', 'supplier')
-      .orderBy('batch.expiryDate', 'ASC')
+      .orderBy('batch.expiryDate', 'ASC', 'NULLS LAST')
       .addOrderBy('batch.receivedAt', 'ASC');
 
     if (query.productId) {
@@ -60,9 +59,12 @@ export class BatchesRepository {
     }
 
     if (!query.includeExpired) {
-      builder.andWhere('batch.expiryDate >= :today', {
-        today: new Date().toISOString().slice(0, 10),
-      });
+      builder.andWhere(
+        '(product.doesNotExpire = true OR batch.expiryDate IS NULL OR batch.expiryDate > :today)',
+        {
+          today: new Date().toISOString().slice(0, 10),
+        },
+      );
     }
 
     return builder.getMany();
@@ -71,26 +73,35 @@ export class BatchesRepository {
   findByIdentity(
     productId: string,
     batchNumber: string,
-    expiryDate: string,
+    expiryDate: string | null,
     manager?: EntityManager,
   ) {
-    return this.repository(manager).findOne({
-      where: {
-        productId,
-        batchNumber,
-        expiryDate,
-      },
-    });
+    const builder = this.repository(manager)
+      .createQueryBuilder('batch')
+      .where('batch.productId = :productId', { productId })
+      .andWhere('batch.batchNumber = :batchNumber', { batchNumber });
+
+    if (expiryDate) {
+      builder.andWhere('batch.expiryDate = :expiryDate', { expiryDate });
+    } else {
+      builder.andWhere('batch.expiryDate IS NULL');
+    }
+
+    return builder.getOne();
   }
 
   findSellableBatches(productId: string, saleDate: string, manager: EntityManager) {
     return this.repository(manager)
       .createQueryBuilder('batch')
       .setLock('pessimistic_write')
+      .leftJoin('batch.product', 'product')
       .where('batch.productId = :productId', { productId })
       .andWhere('batch.quantityOnHand > batch.quantityReserved')
-      .andWhere('batch.expiryDate >= :saleDate', { saleDate })
-      .orderBy('batch.expiryDate', 'ASC')
+      .andWhere(
+        '(product.doesNotExpire = true OR batch.expiryDate IS NULL OR batch.expiryDate > :saleDate)',
+        { saleDate },
+      )
+      .orderBy('batch.expiryDate', 'ASC', 'NULLS LAST')
       .addOrderBy('batch.receivedAt', 'ASC')
       .addOrderBy('batch.createdAt', 'ASC')
       .getMany();

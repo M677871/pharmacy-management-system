@@ -29,6 +29,10 @@ export function ReceiveStockPanel({
   isBusy,
   onReceiveStock,
 }: ReceiveStockPanelProps) {
+  const selectedProduct = products.find(
+    (product) => product.id === purchaseForm.productId,
+  );
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     await onReceiveStock();
@@ -72,6 +76,10 @@ export function ReceiveStockPanel({
             setPurchaseForm((current) => ({
               ...current,
               productId: event.target.value,
+              expiryDate: products.find((product) => product.id === event.target.value)
+                ?.doesNotExpire
+                ? ''
+                : current.expiryDate,
             }))
           }
           required
@@ -99,21 +107,23 @@ export function ReceiveStockPanel({
             required
           />
         </div>
-        <div className="form-group">
-          <label htmlFor="purchase-expiry">Expiry date</label>
-          <input
-            id="purchase-expiry"
-            type="date"
-            value={purchaseForm.expiryDate}
-            onChange={(event) =>
-              setPurchaseForm((current) => ({
-                ...current,
-                expiryDate: event.target.value,
-              }))
-            }
-            required
-          />
-        </div>
+        {!selectedProduct?.doesNotExpire ? (
+          <div className="form-group">
+            <label htmlFor="purchase-expiry">Expiry date</label>
+            <input
+              id="purchase-expiry"
+              type="date"
+              value={purchaseForm.expiryDate}
+              onChange={(event) =>
+                setPurchaseForm((current) => ({
+                  ...current,
+                  expiryDate: event.target.value,
+                }))
+              }
+              required
+            />
+          </div>
+        ) : null}
       </div>
       <div className="inventory-inline-fields">
         <div className="form-group">

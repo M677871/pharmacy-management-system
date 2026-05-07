@@ -26,7 +26,11 @@ export function formatPercent(value: number, maximumFractionDigits = 1) {
   }).format((value ?? 0) / 100);
 }
 
-export function formatDate(value: string) {
+export function formatDate(value: string | null | undefined, fallback = 'No date') {
+  if (!value) {
+    return fallback;
+  }
+
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',

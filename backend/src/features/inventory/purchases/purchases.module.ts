@@ -9,6 +9,7 @@ import { SuppliersModule } from '../suppliers/suppliers.module';
 import { PurchasesController } from './purchases.controller';
 import { Purchase } from './entities/purchase.entity';
 import { PurchasesRepository } from './purchases.repository';
+import { PurchasesResolver } from './purchases.resolver';
 import { PurchasesService } from './purchases.service';
 
 @Module({
@@ -22,7 +23,7 @@ import { PurchasesService } from './purchases.service';
     InventoryRealtimeModule,
   ],
   controllers: [PurchasesController],
-  providers: [PurchasesRepository, PurchasesService],
+  providers: [PurchasesRepository, PurchasesService, PurchasesResolver],
   exports: [PurchasesRepository, PurchasesService],
 })
 export class PurchasesModule {}

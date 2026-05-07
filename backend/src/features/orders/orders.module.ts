@@ -12,6 +12,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { RealtimeCoreModule } from '../realtime/core/realtime-core.module';
 import { User } from '../users/entities/user.entity';
 import { OrdersController } from './orders.controller';
+import { OrdersResolver } from './orders.resolver';
 import { OrdersService } from './orders.service';
 import { CatalogOrder } from './entities/catalog-order.entity';
 import { CatalogOrderItem } from './entities/catalog-order-item.entity';
@@ -39,7 +40,7 @@ import { DeliveryDriver } from './entities/delivery-driver.entity';
     InventoryRealtimeModule,
   ],
   controllers: [OrdersController],
-  providers: [OrdersService],
+  providers: [OrdersService, OrdersResolver],
   exports: [OrdersService],
 })
 export class OrdersModule {}

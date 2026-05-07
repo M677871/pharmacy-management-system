@@ -4,11 +4,12 @@ import { InventoryRealtimeModule } from '../realtime/inventory-realtime.module';
 import { Supplier } from './entities/supplier.entity';
 import { SuppliersController } from './suppliers.controller';
 import { SuppliersRepository } from './suppliers.repository';
+import { SuppliersResolver } from './suppliers.resolver';
 import { SuppliersService } from './suppliers.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Supplier]), InventoryRealtimeModule],
-  providers: [SuppliersRepository, SuppliersService],
+  providers: [SuppliersRepository, SuppliersService, SuppliersResolver],
   controllers: [SuppliersController],
   exports: [SuppliersRepository, SuppliersService],
 })

@@ -36,7 +36,7 @@ export class AllocationService {
       ? await manager.getRepository(Product).findBy({ id: In(productIds) })
       : [];
     const productsById = new Map(products.map((product) => [product.id, product]));
-    const saleDate = toDateOnly(soldAt);
+    const saleDate = toDateOnly(new Date());
     const results: AllocatedSaleItem[] = [];
 
     for (const [productId, requested] of grouped) {
@@ -58,8 +58,13 @@ export class AllocationService {
         .setLock('pessimistic_write')
         .where('batch.productId = :productId', { productId })
         .andWhere('batch.quantityOnHand > batch.quantityReserved')
-        .andWhere('batch.expiryDate >= :saleDate', { saleDate })
-        .orderBy('batch.expiryDate', 'ASC')
+        .andWhere(
+          product.doesNotExpire
+            ? '1 = 1'
+            : '(batch.expiryDate IS NULL OR batch.expiryDate > :saleDate)',
+          { saleDate },
+        )
+        .orderBy('batch.expiryDate', 'ASC', 'NULLS LAST')
         .addOrderBy('batch.receivedAt', 'ASC')
         .addOrderBy('batch.createdAt', 'ASC')
         .getMany();

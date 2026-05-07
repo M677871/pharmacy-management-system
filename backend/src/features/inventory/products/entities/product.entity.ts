@@ -47,6 +47,9 @@ export class Product {
   @Column({ type: 'boolean', default: true })
   isActive!: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  doesNotExpire!: boolean;
+
   @Column({ type: 'uuid', nullable: true })
   categoryId!: string | null;
 

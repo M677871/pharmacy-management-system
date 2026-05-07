@@ -5,6 +5,7 @@ import { InventoryRealtimeModule } from '../realtime/inventory-realtime.module';
 import { Product } from './entities/product.entity';
 import { ProductsController } from './products.controller';
 import { ProductsRepository } from './products.repository';
+import { ProductsResolver } from './products.resolver';
 import { ProductsService } from './products.service';
 
 @Module({
@@ -13,7 +14,7 @@ import { ProductsService } from './products.service';
     CategoriesModule,
     InventoryRealtimeModule,
   ],
-  providers: [ProductsRepository, ProductsService],
+  providers: [ProductsRepository, ProductsService, ProductsResolver],
   controllers: [ProductsController],
   exports: [ProductsRepository, ProductsService],
 })
