@@ -16,6 +16,8 @@ export interface UploadedRecordingFile {
   size?: number;
 }
 
+export const DEFAULT_MAX_RECORDING_UPLOAD_BYTES = 250 * 1024 * 1024;
+
 const MIME_EXTENSION: Record<string, string> = {
   'audio/webm': '.webm',
   'video/webm': '.webm',
@@ -23,6 +25,17 @@ const MIME_EXTENSION: Record<string, string> = {
   'video/mp4': '.mp4',
   'audio/ogg': '.ogg',
 };
+
+export function isSupportedRecordingMimeType(mimeType?: string | null) {
+  if (!mimeType) {
+    return true;
+  }
+
+  return Object.prototype.hasOwnProperty.call(
+    MIME_EXTENSION,
+    mimeType.toLowerCase(),
+  );
+}
 
 @Injectable()
 export class RecordingStorageService {
@@ -48,11 +61,15 @@ export class RecordingStorageService {
 
     const maxBytes = this.configService.get<number>(
       'MAX_RECORDING_UPLOAD_BYTES',
-      250 * 1024 * 1024,
+      DEFAULT_MAX_RECORDING_UPLOAD_BYTES,
     );
 
     if ((file.size ?? file.buffer.length) > maxBytes) {
       throw new BadRequestException('Recording file is too large.');
+    }
+
+    if (!isSupportedRecordingMimeType(file.mimetype)) {
+      throw new BadRequestException('Unsupported recording file type.');
     }
 
     const extension = this.resolveExtension(file.mimetype);
