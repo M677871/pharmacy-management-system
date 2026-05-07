@@ -96,6 +96,8 @@ export function CallSessionModal({ call, onClose }: CallSessionModalProps) {
     call.type === 'video',
   );
   const [recording, setRecording] = useState(false);
+  const [uploadingRecording, setUploadingRecording] = useState(false);
+  const [ending, setEnding] = useState(false);
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState('');
   const [captionDraft, setCaptionDraft] = useState('');
@@ -134,6 +136,12 @@ export function CallSessionModal({ call, onClose }: CallSessionModalProps) {
     callStatusRef.current = session.status;
   }, [session.status]);
 
+  useEffect(() => {
+    if (finished) {
+      setEnding(false);
+    }
+  }, [finished]);
+
   const cleanupMediaSession = useCallback(() => {
     try {
       recognitionRef.current?.stop();
@@ -148,6 +156,12 @@ export function CallSessionModal({ call, onClose }: CallSessionModalProps) {
       }
     } catch {
       // MediaRecorder state can change between the check and stop call.
+    }
+
+    if (peerRef.current) {
+      peerRef.current.onicecandidate = null;
+      peerRef.current.ontrack = null;
+      peerRef.current.onconnectionstatechange = null;
     }
 
     localStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -172,6 +186,16 @@ export function CallSessionModal({ call, onClose }: CallSessionModalProps) {
     pendingIceCandidatesRef.current = [];
     madeOfferRef.current = false;
   }, []);
+
+  const reportCallFailure = useCallback(async () => {
+    try {
+      await failCall(session.id);
+    } catch {
+      await callsService.failCall(session.id).catch(() => {
+        return;
+      });
+    }
+  }, [failCall, session.id]);
 
   useEffect(() => {
     if (!finished) {
@@ -253,9 +277,7 @@ export function CallSessionModal({ call, onClose }: CallSessionModalProps) {
 
       if (peer.connectionState === 'failed') {
         setError('The media connection was interrupted.');
-        void failCall(call.id).catch(() => {
-          return;
-        });
+        void reportCallFailure();
         return;
       }
 
@@ -265,7 +287,7 @@ export function CallSessionModal({ call, onClose }: CallSessionModalProps) {
     };
     peerRef.current = peer;
     return peer;
-  }, [call.id, failCall, iceServers, sendCallSignal]);
+  }, [call.id, iceServers, reportCallFailure, sendCallSignal]);
 
   const flushPendingIceCandidates = useCallback(async (peer: RTCPeerConnection) => {
     if (!peer.remoteDescription || !pendingIceCandidatesRef.current.length) {
@@ -404,15 +426,13 @@ export function CallSessionModal({ call, onClose }: CallSessionModalProps) {
             'Microphone or camera permission was denied.',
           ),
         );
-        void failCall(session.id).catch(() => {
-          return;
-        });
+        void reportCallFailure();
       });
 
     return () => {
       disposed = true;
     };
-  }, [ensureLocalMedia, ensurePeer, failCall, isCaller, sendCallSignal, session.id, session.status]);
+  }, [ensureLocalMedia, ensurePeer, isCaller, reportCallFailure, sendCallSignal, session.id, session.status]);
 
   useRealtimeEvent(realtimeEvent.callSignal, (signal: RtcSignalEvent) => {
     if (signal.callId !== call.id || signal.fromUserId === user?.id) {
@@ -648,6 +668,8 @@ export function CallSessionModal({ call, onClose }: CallSessionModalProps) {
       return;
     }
 
+    setError('');
+    setMediaNotice('');
     recordingChunksRef.current = [];
     recordingStartedAtRef.current = new Date();
     recorder.ondataavailable = (event) => {
@@ -661,6 +683,9 @@ export function CallSessionModal({ call, onClose }: CallSessionModalProps) {
       const blob = new Blob(recordingChunksRef.current, {
         type: recorder.mimeType || 'video/webm',
       });
+      mediaRecorderRef.current = null;
+      recordingChunksRef.current = [];
+      recordingStartedAtRef.current = null;
       setRecording(false);
 
       if (!blob.size) {
@@ -668,6 +693,7 @@ export function CallSessionModal({ call, onClose }: CallSessionModalProps) {
         return;
       }
 
+      setUploadingRecording(true);
       void callsService
         .createRecording(session.id, {
           startedAt: startedAt.toISOString(),
@@ -679,8 +705,14 @@ export function CallSessionModal({ call, onClose }: CallSessionModalProps) {
           mimeType: blob.type,
           blob,
         })
+        .then(() => {
+          setMediaNotice('Recording saved.');
+        })
         .catch((uploadError) => {
           setError(getErrorMessage(uploadError, 'Recording upload failed.'));
+        })
+        .finally(() => {
+          setUploadingRecording(false);
         });
     };
     mediaRecorderRef.current = recorder;
@@ -711,10 +743,25 @@ export function CallSessionModal({ call, onClose }: CallSessionModalProps) {
   }
 
   async function handleEnd() {
-    await endCall(session.id).catch((endError) => {
-      setError(getErrorMessage(endError, 'Unable to end the call.'));
-    });
-    onClose();
+    if (ending) {
+      return;
+    }
+
+    setEnding(true);
+    setError('');
+
+    try {
+      await endCall(session.id);
+    } catch {
+      try {
+        setSession(await callsService.endCall(session.id));
+      } catch (endError) {
+        setError(getErrorMessage(endError, 'Unable to end the call.'));
+        return;
+      }
+    } finally {
+      setEnding(false);
+    }
   }
 
   const subtitleItems = subtitlesEnabled ? captions.slice(-5) : [];
@@ -806,8 +853,13 @@ export function CallSessionModal({ call, onClose }: CallSessionModalProps) {
         ) : session.status === 'ringing' ? (
           <div className="rtc-control-row">
             {isCaller ? (
-              <button type="button" className="workspace-danger-action" onClick={() => void handleEnd()}>
-                Cancel call
+              <button
+                type="button"
+                className="workspace-danger-action"
+                onClick={() => void handleEnd()}
+                disabled={ending}
+              >
+                {ending ? 'Canceling...' : 'Cancel call'}
               </button>
             ) : (
               <>
@@ -879,10 +931,12 @@ export function CallSessionModal({ call, onClose }: CallSessionModalProps) {
                 }
               }}
               title="Record call"
-              disabled={!canUseMediaControls}
+              disabled={!canUseMediaControls || uploadingRecording}
             >
               <VideoIcon className="workspace-mini-icon" />
-              <span>{recording ? 'Stop rec' : 'Record'}</span>
+              <span>
+                {uploadingRecording ? 'Saving...' : recording ? 'Stop rec' : 'Record'}
+              </span>
             </button>
             <button
               type="button"
@@ -903,8 +957,13 @@ export function CallSessionModal({ call, onClose }: CallSessionModalProps) {
                 maxLength={8}
               />
             </label>
-            <button type="button" className="workspace-danger-action" onClick={() => void handleEnd()}>
-              End
+            <button
+              type="button"
+              className="workspace-danger-action"
+              onClick={() => void handleEnd()}
+              disabled={ending}
+            >
+              {ending ? 'Ending...' : 'End'}
             </button>
           </div>
         )}

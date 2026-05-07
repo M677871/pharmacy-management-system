@@ -1,11 +1,12 @@
 import { gql, graphqlMutation, graphqlQuery } from '../../../shared/api/graphql';
-import type { CaptionSegment, RecordingItem } from '../../realtime/types/realtime.types';
+import { apiRequest } from '../../../shared/api/http';
+import { createRecordingUploadFormData } from '../../../shared/api/recordings';
+import type {
+  CallSession,
+  CaptionSegment,
+  RecordingItem,
+} from '../../realtime/types/realtime.types';
 
-const CREATE_CALL_RECORDING = gql`
-  mutation CreateCallRecording($callId: ID!, $input: JSONObject!) {
-    createCallRecording(callId: $callId, input: $input)
-  }
-`;
 const CREATE_CALL_CAPTION = gql`
   mutation CreateCallCaption($callId: ID!, $input: JSONObject!) {
     createCallCaption(callId: $callId, input: $input)
@@ -25,34 +26,22 @@ export const callsService = {
     mimeType?: string;
     blob?: Blob;
   }) {
-    const recordingBase64 = payload.blob
-      ? await blobToDataUrl(payload.blob)
-      : undefined;
-    const result = await graphqlMutation<
-      { createCallRecording: RecordingItem },
-      {
-        callId: string;
-        input: {
-          startedAt: string;
-          endedAt: string;
-          durationSeconds: number;
-          mimeType?: string;
-          recordingBase64?: string;
-          fileName?: string;
-        };
-      }
-    >(CREATE_CALL_RECORDING, {
-      callId,
-      input: {
-        startedAt: payload.startedAt,
-        endedAt: payload.endedAt,
-        durationSeconds: payload.durationSeconds,
-        mimeType: payload.mimeType,
-        recordingBase64,
-        fileName: `call-${callId}.webm`,
-      },
+    return apiRequest<RecordingItem>(`/calls/${callId}/recordings`, {
+      method: 'POST',
+      body: createRecordingUploadFormData(`call-${callId}`, payload),
     });
-    return result.createCallRecording;
+  },
+
+  async endCall(callId: string) {
+    return apiRequest<CallSession>(`/calls/${callId}/end`, {
+      method: 'POST',
+    });
+  },
+
+  async failCall(callId: string) {
+    return apiRequest<CallSession>(`/calls/${callId}/fail`, {
+      method: 'POST',
+    });
   },
 
   async createCaption(callId: string, payload: {
@@ -76,12 +65,3 @@ export const callsService = {
     return result.callCaptions;
   },
 };
-
-function blobToDataUrl(blob: Blob) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-}

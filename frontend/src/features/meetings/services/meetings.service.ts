@@ -1,4 +1,6 @@
 import { gql, graphqlMutation, graphqlQuery } from '../../../shared/api/graphql';
+import { apiRequest } from '../../../shared/api/http';
+import { createRecordingUploadFormData } from '../../../shared/api/recordings';
 import type {
   CaptionSegment,
   Meeting,
@@ -69,11 +71,6 @@ const UPDATE_MEETING_NOTE = gql`
 const MEETING_RECORDINGS = gql`
   query MeetingRecordings($meetingId: ID!) {
     meetingRecordings(meetingId: $meetingId)
-  }
-`;
-const CREATE_MEETING_RECORDING = gql`
-  mutation CreateMeetingRecording($meetingId: ID!, $input: JSONObject!) {
-    createMeetingRecording(meetingId: $meetingId, input: $input)
   }
 `;
 const CREATE_MEETING_CAPTION = gql`
@@ -190,34 +187,10 @@ export const meetingsService = {
     mimeType?: string;
     blob?: Blob;
   }) {
-    const recordingBase64 = payload.blob
-      ? await blobToDataUrl(payload.blob)
-      : undefined;
-    const result = await graphqlMutation<
-      { createMeetingRecording: RecordingItem },
-      {
-        meetingId: string;
-        input: {
-          startedAt: string;
-          endedAt: string;
-          durationSeconds: number;
-          mimeType?: string;
-          recordingBase64?: string;
-          fileName?: string;
-        };
-      }
-    >(CREATE_MEETING_RECORDING, {
-      meetingId,
-      input: {
-        startedAt: payload.startedAt,
-        endedAt: payload.endedAt,
-        durationSeconds: payload.durationSeconds,
-        mimeType: payload.mimeType,
-        recordingBase64,
-        fileName: `meeting-${meetingId}.webm`,
-      },
+    return apiRequest<RecordingItem>(`/meetings/${meetingId}/recordings`, {
+      method: 'POST',
+      body: createRecordingUploadFormData(`meeting-${meetingId}`, payload),
     });
-    return result.createMeetingRecording;
   },
 
   async createCaption(meetingId: string, payload: {
@@ -241,12 +214,3 @@ export const meetingsService = {
     return result.meetingCaptions;
   },
 };
-
-function blobToDataUrl(blob: Blob) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
-  });
-}

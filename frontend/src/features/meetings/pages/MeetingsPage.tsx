@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -98,10 +99,12 @@ export function MeetingsPage() {
   const [cameraEnabled, setCameraEnabled] = useState(true);
   const [screenSharing, setScreenSharing] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [uploadingRecording, setUploadingRecording] = useState(false);
   const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState('');
   const [captionDraft, setCaptionDraft] = useState('');
   const [captionStatus, setCaptionStatus] = useState('');
+  const [endingMeeting, setEndingMeeting] = useState(false);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const screenStreamRef = useRef<MediaStream | null>(null);
@@ -120,6 +123,39 @@ export function MeetingsPage() {
   );
 
   const groupedMeetings = useMemo(() => splitMeetings(meetings), [meetings]);
+
+  const cleanupMeetingSession = useCallback(() => {
+    try {
+      recognitionRef.current?.stop();
+    } catch {
+      // Browser speech APIs can throw if stop is called after an implicit end.
+    }
+    recognitionRef.current = null;
+
+    try {
+      if (mediaRecorderRef.current?.state === 'recording') {
+        mediaRecorderRef.current.stop();
+      }
+    } catch {
+      // MediaRecorder state can change between the check and stop call.
+    }
+
+    localStreamRef.current?.getTracks().forEach((track) => track.stop());
+    screenStreamRef.current?.getTracks().forEach((track) => track.stop());
+
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = null;
+    }
+
+    localStreamRef.current = null;
+    screenStreamRef.current = null;
+    mediaRecorderRef.current = null;
+    recordingChunksRef.current = [];
+    recordingStartedAtRef.current = null;
+    setRecording(false);
+    setScreenSharing(false);
+    setCaptionStatus('');
+  }, []);
 
   useEffect(() => {
     subtitlesEnabledRef.current = subtitlesEnabled;
@@ -159,12 +195,6 @@ export function MeetingsPage() {
       setNotes(meetingNotes);
       setRecordings(meetingRecordings);
       setCaptions(meetingCaptions);
-      setJoined(
-        meeting.participants.some(
-          (participant) =>
-            participant.userId === user?.id && participant.status === 'joined',
-        ),
-      );
     } catch (loadError) {
       setError(getErrorMessage(loadError, 'Unable to load meeting details.'));
     } finally {
@@ -192,6 +222,26 @@ export function MeetingsPage() {
       setSelectedMeeting(meeting);
     }
   });
+
+  useEffect(() => {
+    if (!selectedMeeting || !user) {
+      setJoined(false);
+      cleanupMeetingSession();
+      return;
+    }
+
+    const isCurrentUserJoined = selectedMeeting.participants.some(
+      (participant) =>
+        participant.userId === user.id && participant.status === 'joined',
+    );
+    const meetingClosed = ['ended', 'cancelled'].includes(selectedMeeting.state);
+
+    setJoined(isCurrentUserJoined && !meetingClosed);
+
+    if (!isCurrentUserJoined || meetingClosed) {
+      cleanupMeetingSession();
+    }
+  }, [cleanupMeetingSession, selectedMeeting, user]);
 
   useRealtimeEvent(realtimeEvent.meetingNoteCreated, (note) => {
     if (note.meetingId === selectedMeetingId) {
@@ -231,14 +281,9 @@ export function MeetingsPage() {
 
   useEffect(
     () => () => {
-      recognitionRef.current?.stop();
-      if (mediaRecorderRef.current?.state === 'recording') {
-        mediaRecorderRef.current.stop();
-      }
-      localStreamRef.current?.getTracks().forEach((track) => track.stop());
-      screenStreamRef.current?.getTracks().forEach((track) => track.stop());
+      cleanupMeetingSession();
     },
-    [],
+    [cleanupMeetingSession],
   );
 
   async function publishCaption(text: string, source: 'manual' | 'browser_speech') {
@@ -437,16 +482,17 @@ export function MeetingsPage() {
       return;
     }
 
-    handleStopRecording();
-    localStreamRef.current?.getTracks().forEach((track) => track.stop());
-    screenStreamRef.current?.getTracks().forEach((track) => track.stop());
-    localStreamRef.current = null;
-    screenStreamRef.current = null;
-    const meeting = await leaveMeeting(selectedMeeting.id).catch(() =>
-      meetingsService.leave(selectedMeeting.id),
-    );
-    setSelectedMeeting(meeting);
-    setJoined(false);
+    try {
+      setError('');
+      const meeting = await leaveMeeting(selectedMeeting.id).catch(() =>
+        meetingsService.leave(selectedMeeting.id),
+      );
+      cleanupMeetingSession();
+      setSelectedMeeting(meeting);
+      setJoined(false);
+    } catch (leaveError) {
+      setError(getErrorMessage(leaveError, 'Unable to leave the meeting.'));
+    }
   }
 
   function toggleMute() {
@@ -497,7 +543,19 @@ export function MeetingsPage() {
       screenStreamRef.current = stream;
       setScreenSharing(true);
       stream.getVideoTracks()[0]?.addEventListener('ended', () => {
+        if (screenStreamRef.current !== stream) {
+          return;
+        }
+
+        screenStreamRef.current = null;
         setScreenSharing(false);
+        void sendMeetingSignal({
+          meetingId: selectedMeeting.id,
+          type: 'screen-share-stopped',
+          payload: {},
+        }).catch(() => {
+          return;
+        });
       });
       await sendMeetingSignal({
         meetingId: selectedMeeting.id,
@@ -542,6 +600,8 @@ export function MeetingsPage() {
       return;
     }
 
+    setError('');
+    setFlash('');
     recordingChunksRef.current = [];
     recordingStartedAtRef.current = new Date();
     recorder.ondataavailable = (event) => {
@@ -555,6 +615,9 @@ export function MeetingsPage() {
       const blob = new Blob(recordingChunksRef.current, {
         type: recorder.mimeType || 'video/webm',
       });
+      mediaRecorderRef.current = null;
+      recordingChunksRef.current = [];
+      recordingStartedAtRef.current = null;
       setRecording(false);
 
       if (!blob.size) {
@@ -562,6 +625,7 @@ export function MeetingsPage() {
         return;
       }
 
+      setUploadingRecording(true);
       void meetingsService
         .createRecording(selectedMeeting.id, {
           startedAt: startedAt.toISOString(),
@@ -573,8 +637,14 @@ export function MeetingsPage() {
           mimeType: blob.type,
           blob,
         })
+        .then(() => {
+          setFlash('Recording saved.');
+        })
         .catch((uploadError) => {
           setError(getErrorMessage(uploadError, 'Recording upload failed.'));
+        })
+        .finally(() => {
+          setUploadingRecording(false);
         });
     };
     mediaRecorderRef.current = recorder;
@@ -631,6 +701,23 @@ export function MeetingsPage() {
     }));
   }
 
+  async function handleEndMeeting() {
+    if (!selectedMeeting || endingMeeting) {
+      return;
+    }
+
+    setEndingMeeting(true);
+    setError('');
+
+    try {
+      setSelectedMeeting(await meetingsService.end(selectedMeeting.id));
+    } catch (endError) {
+      setError(getErrorMessage(endError, 'Unable to end meeting.'));
+    } finally {
+      setEndingMeeting(false);
+    }
+  }
+
   if (selectedMeetingId) {
     return (
       <AppShell
@@ -665,26 +752,29 @@ export function MeetingsPage() {
                       type="button"
                       className="workspace-primary-action"
                       onClick={() => void handleJoin()}
-                      disabled={!meetingJoinable}
+                      disabled={!meetingJoinable || endingMeeting}
                     >
                       {meetingJoinable ? 'Join' : 'Closed'}
                     </button>
                   ) : (
-                    <button type="button" className="workspace-danger-action" onClick={() => void handleLeave()}>
+                    <button
+                      type="button"
+                      className="workspace-danger-action"
+                      onClick={() => void handleLeave()}
+                      disabled={endingMeeting}
+                    >
                       Leave
                     </button>
                   )}
-                  {canHostControl && selectedMeeting.state !== 'ended' ? (
+                  {canHostControl &&
+                  !['ended', 'cancelled'].includes(selectedMeeting.state) ? (
                     <button
                       type="button"
                       className="workspace-secondary-action"
-                      onClick={() => {
-                        void meetingsService.end(selectedMeeting.id).then(setSelectedMeeting).catch((endError) => {
-                          setError(getErrorMessage(endError, 'Unable to end meeting.'));
-                        });
-                      }}
+                      onClick={() => void handleEndMeeting()}
+                      disabled={endingMeeting}
                     >
-                      End
+                      {endingMeeting ? 'Ending...' : 'End'}
                     </button>
                   ) : null}
                 </div>
@@ -711,7 +801,7 @@ export function MeetingsPage() {
                 <button
                   type="button"
                   className="rtc-icon-action"
-                  disabled={!joined}
+                  disabled={!joined || uploadingRecording}
                   onClick={() => {
                     if (recording) {
                       handleStopRecording();
@@ -721,7 +811,9 @@ export function MeetingsPage() {
                   }}
                 >
                   <VideoIcon className="workspace-mini-icon" />
-                  <span>{recording ? 'Stop rec' : 'Record'}</span>
+                  <span>
+                    {uploadingRecording ? 'Saving...' : recording ? 'Stop rec' : 'Record'}
+                  </span>
                 </button>
                 <button
                   type="button"
