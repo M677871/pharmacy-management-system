@@ -171,7 +171,7 @@ export function MessagesPage() {
   return (
     <AppShell
       pageTitle="Messages"
-      pageSubtitle="Slack-style direct messaging, live presence, and team-wide announcements without leaving the workspace."
+      pageSubtitle="PharmaFlow direct messaging, live presence, and team-wide announcements without leaving the workspace."
       actions={
         <div className="messages-toolbar">
           <div className={`messages-toolbar-pill${connectionReady ? '' : ' offline'}`}>

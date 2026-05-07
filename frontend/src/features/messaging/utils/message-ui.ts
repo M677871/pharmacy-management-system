@@ -71,13 +71,11 @@ export function formatConversationTimestamp(value: string) {
 
 export function getPresenceLabel(status?: PresenceStatus) {
   if (status === 'active') {
-    return 'Active';
+    return "Active";
   }
-
-  if (status === 'online') {
-    return 'Online';
+  else if (status === 'online') {
+    return "Online";
   }
-
   return 'Offline';
 }
 
