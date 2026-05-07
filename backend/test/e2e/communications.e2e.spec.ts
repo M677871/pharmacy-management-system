@@ -15,6 +15,7 @@ import { NotificationsModule } from '../../src/features/notifications/notificati
 import { MessagingModule } from '../../src/features/messaging/messaging.module';
 import { MediaModule } from '../../src/features/media/media.module';
 import { CallsModule } from '../../src/features/calls/calls.module';
+import { CallsService } from '../../src/features/calls/calls.service';
 import { MeetingsModule } from '../../src/features/meetings/meetings.module';
 import { PresenceService } from '../../src/features/realtime/core/presence.service';
 
@@ -87,6 +88,7 @@ describe('Realtime communications (e2e)', () => {
   let notificationRepo: Repository<Notification>;
   let chatRepo: Repository<ChatMessage>;
   let presenceService: PresenceService;
+  let callsService: CallsService;
 
   beforeAll(async () => {
     const ctx = await createCommunicationsTestApp();
@@ -96,6 +98,7 @@ describe('Realtime communications (e2e)', () => {
     notificationRepo = dataSource.getRepository(Notification);
     chatRepo = dataSource.getRepository(ChatMessage);
     presenceService = app.get(PresenceService);
+    callsService = app.get(CallsService);
   });
 
   afterAll(async () => {
@@ -214,6 +217,39 @@ describe('Realtime communications (e2e)', () => {
         .expect(201);
     });
 
+    it('marks joined participants as left when a meeting ends', async () => {
+      const admin = await registerWithRole(UserRole.ADMIN);
+      const employee = await registerWithRole(UserRole.EMPLOYEE);
+
+      const meeting = await request(app.getHttpServer())
+        .post('/api/meetings')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({
+          title: 'Operations sync',
+          scheduledStartAt: new Date(Date.now() + 3_600_000).toISOString(),
+          durationMinutes: 30,
+          participantIds: [employee.user.id],
+        })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post(`/api/meetings/${meeting.body.id}/join`)
+        .set('Authorization', `Bearer ${employee.accessToken}`)
+        .expect(201);
+
+      const ended = await request(app.getHttpServer())
+        .post(`/api/meetings/${meeting.body.id}/end`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .expect(201);
+
+      expect(ended.body.state).toBe('ended');
+      const joinedParticipant = ended.body.participants.find(
+        (participant: { userId: string }) => participant.userId === employee.user.id,
+      );
+      expect(joinedParticipant?.status).toBe('left');
+      expect(joinedParticipant?.leftAt).not.toBeNull();
+    });
+
     it('protects meeting notes, recordings, and caption translation state', async () => {
       const previousProvider = process.env.TRANSLATION_PROVIDER;
       process.env.TRANSLATION_PROVIDER = 'generic-http';
@@ -252,7 +288,7 @@ describe('Realtime communications (e2e)', () => {
         .set('Authorization', `Bearer ${outsider.accessToken}`)
         .expect(403);
 
-      const recording = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .post(`/api/meetings/${meeting.body.id}/recordings`)
         .set('Authorization', `Bearer ${admin.accessToken}`)
         .send({
@@ -261,8 +297,22 @@ describe('Realtime communications (e2e)', () => {
           durationSeconds: 0,
           mimeType: 'video/webm',
         })
+        .expect(400);
+
+      const recording = await request(app.getHttpServer())
+        .post(`/api/meetings/${meeting.body.id}/recordings`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .field('startedAt', new Date().toISOString())
+        .field('endedAt', new Date().toISOString())
+        .field('durationSeconds', '0')
+        .field('mimeType', 'video/webm')
+        .attach('recording', Buffer.from('meeting-recording'), {
+          filename: 'meeting-recording.webm',
+          contentType: 'video/webm',
+        })
         .expect(201);
-      expect(recording.body.hasFile).toBe(false);
+      expect(recording.body.hasFile).toBe(true);
+      expect(recording.body.downloadUrl).toContain('/api/meetings/recordings/');
 
       await request(app.getHttpServer())
         .get(`/api/meetings/${meeting.body.id}/recordings`)
@@ -325,6 +375,11 @@ describe('Realtime communications (e2e)', () => {
           .set('Authorization', `Bearer ${customer.accessToken}`)
           .expect(201);
         expect(ended.body.status).toBe('ended');
+        expect(
+          ended.body.participants.every(
+            (participant: { leftAt: string | null }) => participant.leftAt !== null,
+          ),
+        ).toBe(true);
       } finally {
         unregisterEmployee();
       }
@@ -373,7 +428,7 @@ describe('Realtime communications (e2e)', () => {
           .set('Authorization', `Bearer ${employee.accessToken}`)
           .expect(201);
 
-        const recording = await request(app.getHttpServer())
+        await request(app.getHttpServer())
           .post(`/api/calls/${call.body.id}/recordings`)
           .set('Authorization', `Bearer ${customer.accessToken}`)
           .send({
@@ -382,9 +437,22 @@ describe('Realtime communications (e2e)', () => {
             durationSeconds: 0,
             mimeType: 'audio/webm',
           })
+          .expect(400);
+
+        const recording = await request(app.getHttpServer())
+          .post(`/api/calls/${call.body.id}/recordings`)
+          .set('Authorization', `Bearer ${customer.accessToken}`)
+          .field('startedAt', new Date().toISOString())
+          .field('endedAt', new Date().toISOString())
+          .field('durationSeconds', '0')
+          .field('mimeType', 'audio/webm')
+          .attach('recording', Buffer.from('call-recording'), {
+            filename: 'call-recording.webm',
+            contentType: 'audio/webm',
+          })
           .expect(201);
         expect(recording.body.callId).toBe(call.body.id);
-        expect(recording.body.downloadUrl).toBeNull();
+        expect(recording.body.downloadUrl).toContain('/api/calls/recordings/');
 
         await request(app.getHttpServer())
           .get(`/api/calls/${call.body.id}/recordings`)
@@ -402,6 +470,47 @@ describe('Realtime communications (e2e)', () => {
           .expect(201);
         expect(caption.body.text).toBe('Your order is ready');
         expect(caption.body.translationStatus).toBe('disabled');
+      } finally {
+        unregisterEmployee();
+      }
+    });
+
+    it('ignores late realtime signaling after a call has already finished', async () => {
+      const customer = await registerWithRole(UserRole.CUSTOMER);
+      const employee = await registerWithRole(UserRole.EMPLOYEE);
+      const unregisterEmployee = await markUserOnline(employee.user.id);
+
+      try {
+        const call = await request(app.getHttpServer())
+          .post('/api/calls')
+          .set('Authorization', `Bearer ${customer.accessToken}`)
+          .send({
+            recipientId: employee.user.id,
+            type: 'video',
+          })
+          .expect(201);
+
+        await request(app.getHttpServer())
+          .post(`/api/calls/${call.body.id}/accept`)
+          .set('Authorization', `Bearer ${employee.accessToken}`)
+          .expect(201);
+
+        await request(app.getHttpServer())
+          .post(`/api/calls/${call.body.id}/end`)
+          .set('Authorization', `Bearer ${customer.accessToken}`)
+          .expect(201);
+
+        await expect(
+          callsService.relaySignal(customer.user as User, {
+            callId: call.body.id as string,
+            type: 'ice-candidate',
+            payload: {
+              candidate: 'late-candidate',
+              sdpMid: '0',
+              sdpMLineIndex: 0,
+            },
+          }),
+        ).resolves.toEqual({ ok: true });
       } finally {
         unregisterEmployee();
       }
