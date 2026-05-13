@@ -21,6 +21,36 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
             modern pharmacy teams.
           </p>
         </div>
+        <div className="auth-brand-insight" aria-hidden="true">
+          <div className="auth-insight-header">
+            <span>Today</span>
+            <strong>Operations pulse</strong>
+          </div>
+          <div className="auth-insight-grid">
+            <div>
+              <span>Stock health</span>
+              <strong>98%</strong>
+            </div>
+            <div>
+              <span>Orders</span>
+              <strong>42</strong>
+            </div>
+          </div>
+          <div className="auth-insight-list">
+            <span className="auth-insight-row">
+              <i />
+              Inventory synced
+            </span>
+            <span className="auth-insight-row">
+              <i />
+              Purchases reviewed
+            </span>
+            <span className="auth-insight-row">
+              <i />
+              Reports refreshed
+            </span>
+          </div>
+        </div>
         <div className="auth-brand-glow auth-brand-glow-top" />
         <div className="auth-brand-glow auth-brand-glow-bottom" />
       </section>
