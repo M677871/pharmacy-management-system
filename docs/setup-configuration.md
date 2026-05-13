@@ -1,101 +1,67 @@
 # Setup and Configuration
 
+This document summarizes local setup for running PharmaFlow.
+
 ## Prerequisites
 
-- Node.js 20 or later recommended
-- npm
-- PostgreSQL 16 (if running without Docker)
-- Docker + Docker Compose (optional, for full containerized stack)
+- Node.js and npm
+- PostgreSQL, or Docker Compose
+- Backend and frontend environment files
 
-## Repository Layout
+## Backend
 
-- `backend`: NestJS API service
-- `frontend`: React client
-- `compose.yaml`: local multi-container orchestration
+```bash
+cd backend
+npm install
+npm run start:dev
+```
 
-## Local Development Setup
+The backend normally runs on:
 
-## 1. Install dependencies
+```text
+http://localhost:3000
+```
 
-From repository root:
+## Frontend
 
-- Backend
-  - `cd backend`
-  - `npm install`
-- Frontend
-  - `cd frontend`
-  - `npm install`
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## 2. Configure environment
+The frontend normally runs on:
 
-Backend:
+```text
+http://localhost:5173
+```
 
-- Copy `backend/.env.example` to `backend/.env`
-- Update values for database, JWT, OAuth, and SMTP as needed
+## Docker Compose
 
-Frontend:
+From the repository root:
 
-- `frontend/.env` supports `VITE_API_URL`
-- If omitted, the frontend defaults to `http://localhost:3000/api`
+```bash
+docker compose up --build
+```
 
-## 3. Start services
+## Runtime Configuration
 
-### Option A: local processes
+The backend reads database, JWT, OAuth, mail, recording, translation, and frontend URL settings from environment variables.
 
-- Start backend from `backend`:
-  - `npm run start:dev`
-- Start frontend from `frontend`:
-  - `npm run dev`
+The frontend reads API, GraphQL, and socket URLs from Vite environment variables.
 
-### Option B: Docker Compose
+## Verification
 
-From repository root:
+Frontend production build:
 
-- `docker compose up --build`
+```bash
+cd frontend
+npm run build
+```
 
-Compose services:
+Backend tests:
 
-- Database: PostgreSQL
-- Backend: NestJS API
-- Frontend: Nginx-served Vite build
-
-## Runtime Defaults
-
-- Frontend dev server: 5173 (`frontend/vite.config.ts`)
-- Backend API: 3000 (`backend/src/main.ts`)
-- API prefix: `/api`
-- Realtime namespace: `/realtime`
-
-## Build Commands
-
-Backend (`backend/package.json`):
-
-- `npm run build`
-- `npm run start:prod`
-
-Frontend (`frontend/package.json`):
-
-- `npm run build`
-- `npm run preview`
-
-## Configuration Behavior Notes
-
-- CORS origin is controlled by `FRONTEND_URL` in backend configuration.
-- TypeORM runtime sync behavior is controlled by `DATABASE_SYNCHRONIZE` when set.
-- Password reset mode uses `PASSWORD_RESET_MODE` when set; otherwise environment-aware fallback applies.
-
-## Database and Schema Management
-
-Runtime configuration:
-
-- `backend/src/database/database.config.ts`
-
-CLI/migration configuration:
-
-- `backend/src/database/typeorm-cli.config.ts`
-
-Migration files:
-
-- `backend/src/database/migrations/1710500000000-CreateInventorySlice.ts`
-- `backend/src/database/migrations/1710600000000-AddPasswordResetMetadata.ts`
-- `backend/src/database/migrations/1710700000000-SetUserRoleDefaultCustomer.ts`
+```bash
+cd backend
+npm test
+```
