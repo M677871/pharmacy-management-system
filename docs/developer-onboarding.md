@@ -1,124 +1,68 @@
 # Developer Onboarding
 
-## Purpose
-This guide helps new contributors run, understand, and work with the PharmaFlow codebase efficiently.
+This guide gives new contributors the quickest path to understanding PharmaFlow.
 
-## 1. Initial Setup
+## Start Here
 
-1. Install prerequisites:
-   - Node.js
-   - npm
-   - PostgreSQL (or Docker)
-2. Clone repository and install dependencies:
-   - `backend`: `npm install`
-   - `frontend`: `npm install`
-3. Configure environment files:
-   - Backend: create `backend/.env` from `backend/.env.example`
-   - Frontend: set `frontend/.env` with `VITE_API_URL` if needed
+1. Read the root `README.md` for the product overview and screenshot gallery.
+2. Read `docs/architecture.md` for the system shape.
+3. Run the backend and frontend locally.
+4. Explore the app with one staff/admin user and one customer user.
 
-## 2. Start Development Environment
+## Important Concepts
 
-### Local processes
+- The app is role-aware: admin, employee, and customer see different routes.
+- The frontend is a React SPA with protected routes and shared shell components.
+- The backend is modular NestJS with TypeORM persistence.
+- Realtime events are central to the product experience.
+- Video calls and meetings are implemented as communication features integrated with auth, realtime, recordings, captions, and notifications.
 
-- Backend: run `npm run start:dev` in `backend`
-- Frontend: run `npm run dev` in `frontend`
+## Key Frontend Entry Points
 
-### Docker Compose
-
-- From root run `docker compose up --build`
-
-Expected local URLs:
-
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:3000/api`
-
-## 3. Read This Code First
-
-Backend foundation:
-
-- `backend/src/main.ts`
-- `backend/src/app.module.ts`
-- `backend/src/database/database.config.ts`
-
-Core domain slices:
-
-- Auth: `backend/src/features/auth`
-- Inventory: `backend/src/features/inventory`
-- Orders: `backend/src/features/orders`
-- Realtime: `backend/src/features/realtime`
-- Messaging/notifications: `backend/src/features/messaging`, `backend/src/features/notifications`
-
-Frontend foundation:
-
-- `frontend/src/main.tsx`
 - `frontend/src/App.tsx`
-- `frontend/src/shared/api/axios.ts`
-- `frontend/src/features/auth/context/AuthContext.tsx`
+- `frontend/src/shared/components/AppShell.tsx`
+- `frontend/src/shared/navigation/app-navigation.tsx`
 - `frontend/src/features/realtime/context/RealtimeContext.tsx`
+- `frontend/src/App.css`
 
-## 4. Understand Access Control Early
+## Key Backend Entry Points
 
-Backend role model:
+- `backend/src/app.module.ts`
+- `backend/src/main.ts`
+- `backend/src/features/auth`
+- `backend/src/features/inventory`
+- `backend/src/features/orders`
+- `backend/src/features/messaging`
+- `backend/src/features/notifications`
+- `backend/src/features/calls`
+- `backend/src/features/meetings`
+- `backend/src/features/realtime`
+- `backend/src/features/dashboard`
 
-- `admin`
-- `employee`
-- `customer`
+## Useful Commands
 
-Enforcement points:
+Frontend:
 
-- JWT guard
-- Roles guard
-- `@Roles` decorator on protected controllers and methods
+```bash
+cd frontend
+npm run dev
+npm run build
+```
 
-Frontend role model is reflected in:
+Backend:
 
-- Route guards in `frontend/src/App.tsx`
-- Sidebar navigation in `frontend/src/shared/navigation/app-navigation.tsx`
+```bash
+cd backend
+npm run start:dev
+npm test
+```
 
-## 5. Run Tests
+Docker:
 
-Backend test commands:
+```bash
+docker compose up --build
+```
 
-- `npm run test`
-- `npm run test:unit`
-- `npm run test:e2e`
-- `npm run test:cov`
+## Quality Bar
 
-Test scaffolding and DB lifecycle helpers:
-
-- `backend/test/helpers/test-app.ts`
-- `backend/test/helpers/auth.helper.ts`
-
-Recommended first suites for familiarization:
-
-- `backend/test/e2e/auth.e2e.spec.ts`
-- `backend/test/e2e/inventory.e2e.spec.ts`
-- `backend/test/e2e/orders.e2e.spec.ts`
-
-## 6. Debugging and Runtime Tracing
-
-Useful backend flow anchors:
-
-- Auth issuance/refresh: `backend/src/features/auth/auth.service.ts`
-- Inventory checkout allocation: `backend/src/features/inventory/sales/services/allocation.service.ts`
-- Order transitions and notifications: `backend/src/features/orders/orders.service.ts`
-- Realtime event wiring: `backend/src/features/realtime/realtime.gateway.ts`
-
-Useful frontend flow anchors:
-
-- Token refresh interceptor: `frontend/src/shared/api/axios.ts`
-- Auth bootstrap and token storage: `frontend/src/features/auth/context/AuthContext.tsx`
-- Live socket event handling: `frontend/src/features/realtime/context/RealtimeContext.tsx`
-
-## 7. Documentation Map
-
-For architecture and operational detail, use:
-
-- `docs/architecture.md`
-- `docs/backend.md`
-- `docs/frontend.md`
-- `docs/api-structure.md`
-- `docs/setup-configuration.md`
-- `docs/environment-variables.md`
-- `docs/project-structure.md`
-- `docs/key-flows.md`
+When changing the project, preserve the existing flows first. Then verify the affected role, route, API calls, realtime behavior, loading state, empty state, and responsive layout.
