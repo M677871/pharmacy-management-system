@@ -1,167 +1,146 @@
 # PharmaFlow
 
-PharmaFlow is a production-style pharmacy management platform built with NestJS, React, TypeScript, Socket.IO, and PostgreSQL.
+PharmaFlow is a full-stack pharmacy operations platform for staff, administrators, and customers. It brings pharmacy inventory, sales, purchasing, delivery orders, analytics, realtime messaging, notifications, meetings, and video calls into one role-aware workspace.
 
-It supports end-to-end workflows for:
+The project is implemented as a production-style application using React, TypeScript, NestJS, PostgreSQL, GraphQL, REST APIs, Socket.IO, and WebRTC-oriented communication workflows.
 
-- authentication and account security
-- inventory and stock lifecycle management
-- point-of-sale checkout and return processing
-- catalog ordering with assignment and approval lifecycle
-- realtime notifications and staff/customer messaging
-- dashboard and reporting experiences
+## Product Scope
 
-## Documentation Index
+PharmaFlow supports:
 
-- Architecture: [docs/architecture.md](docs/architecture.md)
-- Backend (NestJS): [docs/backend.md](docs/backend.md)
-- Frontend (React): [docs/frontend.md](docs/frontend.md)
-- API Structure: [docs/api-structure.md](docs/api-structure.md)
-- Setup and Configuration: [docs/setup-configuration.md](docs/setup-configuration.md)
-- Environment Variables: [docs/environment-variables.md](docs/environment-variables.md)
-- Project Structure: [docs/project-structure.md](docs/project-structure.md)
-- Key Flows: [docs/key-flows.md](docs/key-flows.md)
-- Developer Onboarding: [docs/developer-onboarding.md](docs/developer-onboarding.md)
+- Secure authentication with JWT access/refresh tokens, social login hooks, password reset, and optional TOTP two-factor authentication.
+- Staff and admin workspaces for inventory, batches, categories, purchasing, POS checkout, returns, reporting, users, and settings.
+- Customer catalog, cart, order tracking, delivery handoff, and customer-to-pharmacy messaging.
+- Realtime notifications, unread counters, targeted notification drawers, and notification center workflows.
+- Direct messaging with live presence, read states, broadcasts, message editing/deletion, and staff/customer conversations.
+- Voice and video call workflows connected to messaging, including call lifecycle APIs, protected recordings, captions, and signaling.
+- Staff meetings with participants, join/leave/end/cancel flows, notes, recordings, captions, and meeting invitations.
+- Analytics dashboards for revenue, profit, inventory health, product performance, employee performance, and operational trends.
 
-## Overview
+## Platform Gallery
 
-PharmaFlow is organized as a two-application repository:
+The images below were captured from the running local platform.
 
-- Backend: NestJS API and realtime gateway (`backend`)
-- Frontend: React SPA (`frontend`)
+### Access
 
-The backend exposes REST APIs under `/api` and realtime events under Socket.IO namespace `/realtime`.
+![Login screen](docs/images/login.png)
+
+### Staff Operations
+
+![Dashboard](docs/images/dashboard.png)
+
+![Inventory management](docs/images/inventory.png)
+
+![Point of sale](docs/images/sales-pos.png)
+
+![Purchases](docs/images/purchases.png)
+
+![Orders](docs/images/orders.png)
+
+![Settings and security](docs/images/settings.png)
+
+### Analytics
+
+![Reports and analytics](docs/images/reports.png)
+
+### Realtime Communication
+
+![Messages workspace](docs/images/messages.png)
+
+![Meetings workspace](docs/images/meetings.png)
+
+![Active meeting room](docs/images/meeting-room-active.png)
+
+![Two-user video call](docs/images/video-call-active.png)
+
+![Notification drawer above dashboard cards](docs/images/notifications-drawer-fixed.png)
+
+### Customer Experience
+
+![Customer catalog](docs/images/customer-catalog.png)
+
+![Customer cart](docs/images/customer-cart.png)
+
+![Customer orders](docs/images/customer-orders.png)
+
+![Customer messaging](docs/images/customer-messages.png)
+
+### Responsive Mobile
+
+![Mobile catalog](docs/images/mobile-catalog.png)
+
+## Experience Highlights
+
+- Staff get a dense operational workspace with persistent navigation, live counters, quick access to notifications, and role-aware pages.
+- Customers get a simplified catalog and delivery experience focused on ordering, tracking, and communication.
+- Notifications, messages, orders, inventory changes, meetings, and calls are connected through realtime infrastructure.
+- Video calls and meetings are treated as first-class collaboration features, not separate prototypes.
+- The UI is responsive across desktop and mobile, with polished cards, tables, empty states, forms, focus states, and navigation.
 
 ## Architecture
 
-High-level topology:
+PharmaFlow is organized as two applications:
 
-- Client: React + Vite + Axios + Socket.IO client
-- Server: NestJS modules + TypeORM + Socket.IO gateway
-- Data: PostgreSQL
-- Local orchestration: Docker Compose (`compose.yaml`)
+- `backend/`: NestJS API, GraphQL resolvers, REST controllers, TypeORM persistence, Socket.IO realtime gateway, calls, meetings, notifications, messaging, auth, orders, inventory, dashboard, and user management.
+- `frontend/`: React + Vite single-page application with protected routes, role-aware shells, shared components, realtime context, GraphQL/REST clients, and responsive UI.
 
-Core backend modules:
+Core runtime services:
 
-- Auth
-- Dashboard
-- Inventory
-- Orders
-- Messaging
-- Notifications
-- Realtime
-- Users
+- PostgreSQL stores users, auth metadata, inventory records, orders, messages, notifications, calls, meetings, captions, recordings, and reporting data.
+- Socket.IO powers live presence, notifications, messaging, order updates, inventory updates, call signaling, and meeting signaling.
+- JWT authentication protects both API requests and realtime connections.
 
-## Backend
-
-Backend conventions follow modular NestJS patterns:
-
-- Feature slices under `backend/src/features`
-- DTO-based validation and transformation
-- Guard-based auth and authorization (`JwtAuthGuard`, `RolesGuard`)
-- Typed entities and repository-backed data access
-- Service-level transaction handling for inventory and order lifecycle operations
-
-For full backend details, see [docs/backend.md](docs/backend.md).
-
-## Frontend
-
-Frontend conventions follow modern React application patterns:
-
-- Route composition in `frontend/src/App.tsx`
-- Auth context and token hydration in `frontend/src/features/auth/context/AuthContext.tsx`
-- Axios API client with automatic token refresh in `frontend/src/shared/api/axios.ts`
-- Realtime context in `frontend/src/features/realtime/context/RealtimeContext.tsx`
-- Role-aware navigation and route protection
-
-For full frontend details, see [docs/frontend.md](docs/frontend.md).
-
-## API Structure
-
-REST API:
-
-- Base path: `/api`
-- Controllers grouped by feature (`auth`, `inventory`, `orders`, `messages`, `notifications`, `dashboard`, `users`)
-
-Realtime API:
-
-- Namespace: `/realtime`
-- Client/server event contracts are centralized in `backend/src/features/realtime/realtime.events.ts`
-
-Complete route and event map: [docs/api-structure.md](docs/api-structure.md).
-
-## Setup
+## Local Development
 
 Prerequisites:
 
-- Node.js
-- npm
-- PostgreSQL (or Docker)
+- Node.js and npm
+- PostgreSQL, or Docker Compose
 
-Local development:
+Typical local startup:
 
-1. Install backend dependencies in `backend`
-2. Install frontend dependencies in `frontend`
-3. Configure `backend/.env`
-4. Start backend (`npm run start:dev`)
-5. Start frontend (`npm run dev`)
+```bash
+cd backend
+npm install
+npm run start:dev
+```
 
-Containerized development:
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-- Run from repository root: `docker compose up --build`
+Containerized startup:
 
-Detailed setup: [docs/setup-configuration.md](docs/setup-configuration.md).
+```bash
+docker compose up --build
+```
 
-## Configuration
+## Documentation
 
-Configuration is environment-driven:
+- [Architecture](docs/architecture.md)
+- [Backend](docs/backend.md)
+- [Frontend](docs/frontend.md)
+- [API Structure](docs/api-structure.md)
+- [Key Flows](docs/key-flows.md)
+- [Setup and Configuration](docs/setup-configuration.md)
+- [Environment Variables](docs/environment-variables.md)
+- [Project Structure](docs/project-structure.md)
+- [Developer Onboarding](docs/developer-onboarding.md)
 
-- Backend uses Nest `ConfigModule` and `ConfigService`
-- Database configuration comes from `backend/src/database/database.config.ts`
-- TypeORM CLI datasource is in `backend/src/database/typeorm-cli.config.ts`
-- Frontend runtime base URLs are resolved in `frontend/src/shared/api/axios.ts`
+## Verification
 
-## Environment Variables
+The frontend production build is expected to pass with:
 
-Templates and active env files:
+```bash
+cd frontend
+npm run build
+```
 
-- Root compose defaults: `.env.example`
-- Backend template: `backend/.env.example`
-- Backend test env: `backend/.env.test`
-- Frontend local env: `frontend/.env`
+The backend test suite is available with:
 
-Complete variable catalog: [docs/environment-variables.md](docs/environment-variables.md).
-
-## Project Structure
-
-Top-level layout:
-
-- `backend/`
-- `frontend/`
-- `compose.yaml`
-- `docs/`
-
-Detailed structure map: [docs/project-structure.md](docs/project-structure.md).
-
-## Key Flows
-
-Documented implementation flows include:
-
-- login, refresh, logout
-- password reset (OTP and link)
-- TOTP setup and verification
-- checkout allocation and stock movement recording
-- purchase receiving
-- sale return processing
-- order assignment, approval/rejection, payment completion
-- notifications and direct/broadcast messaging
-
-Flow-level details: [docs/key-flows.md](docs/key-flows.md).
-
-## Developer Onboarding
-
-For first-time contributors, start here:
-
-- [docs/developer-onboarding.md](docs/developer-onboarding.md)
-
-It covers local startup, test execution, key code entry points, and repository navigation.
+```bash
+cd backend
+npm test
+```
