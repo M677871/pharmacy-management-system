@@ -1,126 +1,31 @@
 # Project Structure
 
-## Top Level
+PharmaFlow is organized as a two-application repository with shared documentation and local orchestration files.
 
-- `compose.yaml`
-- `README.md`
-- `.env.example`
-- `backend/`
-- `frontend/`
-- `docs/`
+## Root
 
-## Backend Structure
+- `README.md`: product overview, screenshot gallery, and documentation index.
+- `compose.yaml`: local container orchestration.
+- `.env.example`: root-level environment template for local services.
+- `docs/`: high-level product and technical documentation.
+- `docs/images/`: screenshots captured from the running platform.
 
-Root:
+## Backend
 
-- `backend/package.json`
-- `backend/jest.config.js`
-- `backend/Dockerfile`
-- `backend/.env.example`
-- `backend/.env.test`
+- `backend/src/`: NestJS source code.
+- `backend/src/features/`: product domains such as auth, inventory, dashboard, orders, messaging, notifications, calls, meetings, realtime, and users.
+- `backend/src/database/`: database configuration and migrations.
+- `backend/test/`: unit and end-to-end tests.
+- `backend/storage/`: local storage area for uploaded recordings.
 
-Source:
+## Frontend
 
-- `backend/src/main.ts`
-- `backend/src/app.module.ts`
-- `backend/src/database/`
-  - `database.config.ts`
-  - `typeorm-cli.config.ts`
-  - `migrations/`
+- `frontend/src/App.tsx`: route map and protected route composition.
+- `frontend/src/App.css`: global product styling and responsive UI system.
+- `frontend/src/app/`: Redux store and typed hooks.
+- `frontend/src/features/`: page and feature modules for auth, dashboard, inventory, sales, purchases, reports, catalog, orders, messaging, meetings, notifications, settings, calls, and realtime.
+- `frontend/src/shared/`: shared API clients, components, icons, navigation, charts, and formatting utilities.
 
-Feature slices under `backend/src/features`:
+## Documentation
 
-- `auth/`
-- `dashboard/`
-- `inventory/`
-- `mail/`
-- `messaging/`
-- `notifications/`
-- `orders/`
-- `realtime/`
-- `users/`
-
-Testing:
-
-- `backend/test/e2e/`
-- `backend/test/unit/`
-- `backend/test/helpers/`
-
-## Inventory Slice Layout (Backend)
-
-Within `backend/src/features/inventory`, structure is grouped by domain component:
-
-- `batches/`
-- `categories/`
-- `products/`
-- `purchase-items/`
-- `purchases/`
-- `return-items/`
-- `sale-item-allocations/`
-- `sale-items/`
-- `sale-returns/`
-- `sales/`
-- `stock-movements/`
-- `suppliers/`
-- `realtime/`
-
-Most components follow a repeating pattern:
-
-- `*.controller.ts`
-- `*.service.ts`
-- `*.repository.ts`
-- `dto/`
-- `entities/`
-
-## Frontend Structure
-
-Root:
-
-- `frontend/package.json`
-- `frontend/vite.config.ts`
-- `frontend/Dockerfile`
-- `frontend/nginx.conf`
-- `frontend/index.html`
-
-Source entry:
-
-- `frontend/src/main.tsx`
-- `frontend/src/App.tsx`
-- `frontend/src/App.css`
-
-Feature folders under `frontend/src/features`:
-
-- `auth/`
-- `catalog/`
-- `dashboard/`
-- `inventory/`
-- `messaging/`
-- `notifications/`
-- `orders/`
-- `purchases/`
-- `realtime/`
-- `reports/`
-- `sales/`
-- `settings/`
-- `users/`
-
-Shared cross-feature assets:
-
-- `frontend/src/shared/api/`
-- `frontend/src/shared/components/`
-- `frontend/src/shared/navigation/`
-- `frontend/src/shared/utils/`
-
-## Documentation Structure
-
-The documentation package is organized as:
-
-- `docs/architecture.md`
-- `docs/backend.md`
-- `docs/frontend.md`
-- `docs/api-structure.md`
-- `docs/setup-configuration.md`
-- `docs/environment-variables.md`
-- `docs/key-flows.md`
-- `docs/developer-onboarding.md`
-- `docs/project-structure.md`
+The docs are intentionally high level. They explain the product, architecture, APIs, setup, and workflows without duplicating every implementation detail from the source code.
