@@ -1,133 +1,63 @@
-# Frontend Documentation
+# Frontend
 
-## Overview
-The frontend is a React 18 + TypeScript single-page application built with Vite.
-It provides role-aware experiences for:
+The frontend is a React + Vite single-page application that presents PharmaFlow as a polished, role-aware pharmacy workspace.
 
-- Admin users
-- Employee users
-- Customer users
+## Responsibilities
 
-Primary concerns implemented by the frontend:
+- Authenticate users and hydrate profile state.
+- Protect routes by role.
+- Render staff, admin, and customer navigation.
+- Provide responsive dashboards, tables, forms, cards, empty states, loading states, and error states.
+- Connect to GraphQL, REST APIs, and Socket.IO realtime events.
+- Surface notifications, unread counts, presence, messaging, calls, meetings, and operational updates.
 
-- Authentication workflows (email/password, social callback, TOTP verification).
-- Protected and role-based routing.
-- Operational pages for inventory, POS, purchases, orders, messages, and reports.
-- Realtime UX for notifications, chat, presence, inventory/analytics refresh, and order events.
+## User Experiences
 
-## Entry Point and Providers
-Source: `frontend/src/main.tsx`
+Staff and admins use:
 
-Application root composition:
+- Dashboard
+- Messages
+- Notifications
+- Meetings
+- Inventory
+- Point of Sale
+- Purchases
+- Reports
+- Orders
+- Settings
 
-- `BrowserRouter`
-- `AuthProvider`
-- `RealtimeProvider`
+Customers use:
 
-This means all routed pages share authenticated user state and realtime state.
+- Catalog
+- Cart
+- Orders
+- Messages
+- Account settings
 
-## Routing Model
-Source: `frontend/src/App.tsx`
+## Communication UI
 
-### Public guest routes
+The frontend includes direct messaging, live presence, broadcast management, unread indicators, conversation details, and call controls. Voice/video calls and staff meetings are integrated into the main workspace rather than treated as isolated pages.
 
-- `/auth/login`
-- `/auth/register`
-- `/auth/forgot-password`
-- `/auth/reset-password`
-- `/auth/totp-verify`
-- `/auth/social-callback`
+## Realtime UX
 
-Guest routes redirect authenticated users to `/dashboard`.
+The realtime context keeps the UI updated for:
 
-### Protected routes
+- Notifications
+- Message unread counts
+- Presence
+- Inventory and order changes
+- Analytics refresh hints
+- Active calls
+- Meeting and call events
 
-- `/dashboard`
-- `/messages`
-- `/inventory` (admin, employee)
-- `/sales` (admin, employee)
-- `/purchases` (admin, employee)
-- `/reports` (admin, employee)
-- `/catalog` (customer)
-- `/orders`
-- `/settings`
+## Responsive Design
 
-Protected route logic is enforced by `frontend/src/shared/components/ProtectedRoute.tsx`.
+The interface is designed for desktop, tablet, and mobile:
 
-## Authentication State Management
-Source: `frontend/src/features/auth/context/AuthContext.tsx`
+- Desktop uses persistent sidebar navigation and dense operational layouts.
+- Tablet collapses complex grids into manageable columns.
+- Mobile uses bottom navigation, single-column content, full-width controls, and protected spacing for small screens.
 
-Managed state:
+## Styling
 
-- `user`
-- `loading`
-
-Operations:
-
-- `login`
-- `register`
-- `logout`
-- `setAuthTokens`
-- `refreshProfile`
-
-Token storage:
-
-- Access and refresh tokens are persisted in local storage.
-- On startup, presence of access token triggers profile refresh.
-
-## API Client and Token Refresh
-Source: `frontend/src/shared/api/axios.ts`
-
-- `API_URL` from `VITE_API_URL` with default `http://localhost:3000/api`
-- `SOCKET_URL` from `VITE_SOCKET_URL` or derived from API URL
-
-Interceptors:
-
-- Request interceptor adds bearer token from local storage.
-- Response interceptor handles 401 by posting to `/auth/refresh`, then retries original request.
-- On refresh failure, tokens are cleared and user is redirected to login.
-
-## Realtime State and Event Handling
-Source: `frontend/src/features/realtime/context/RealtimeContext.tsx`
-
-Realtime provider responsibilities:
-
-- Connection lifecycle and heartbeat.
-- Notification list and unread counts.
-- Broadcast list and unread messaging indicators.
-- Presence snapshots and live updates.
-- Toast queue for realtime user feedback.
-- Socket-driven messaging operations with ack handling.
-
-Socket connection:
-
-- Connects to `${SOCKET_URL}/realtime`
-- Auth payload sends token from local storage
-- Uses websocket and polling transports
-
-## Navigation and Application Shell
-
-- Shell UI: `frontend/src/shared/components/AppShell.tsx`
-- Role-based nav items: `frontend/src/shared/navigation/app-navigation.tsx`
-
-Navigation is filtered by authenticated user role and includes unread message indicators on the Messages entry.
-
-## Feature-Level Service Layer
-
-Feature services encapsulate API calls:
-
-- Auth: `frontend/src/features/auth/services/auth.service.ts`
-- Dashboard: `frontend/src/features/dashboard/services/dashboard.service.ts`
-- Inventory: `frontend/src/features/inventory/services/inventory.service.ts`
-- Orders: `frontend/src/features/orders/services/orders.service.ts`
-- Messages: `frontend/src/features/messaging/services/messages.service.ts`
-- Notifications: `frontend/src/features/notifications/services/notifications.service.ts`
-- Users admin helpers: `frontend/src/features/users/services/users.service.ts`
-
-## Build and Delivery
-
-- Dev server port configured in `frontend/vite.config.ts` as 5173.
-- Production build uses Vite output in `frontend/dist`.
-- Container runtime serves static assets through Nginx:
-  - Dockerfile: `frontend/Dockerfile`
-  - Nginx config: `frontend/nginx.conf`
+The visual system is centralized in `frontend/src/App.css`. It defines the product shell, cards, forms, buttons, tables, messaging surfaces, notification drawer, auth screens, responsive behavior, focus states, and motion preferences.
